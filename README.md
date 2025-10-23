@@ -4,7 +4,7 @@ A production-ready Model Context Protocol (MCP) server with OAuth 2.1 authentica
 
 [![CI](https://github.com/huberp/n-eight-n/workflows/CI/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/ci.yml)
 [![Tests](https://github.com/huberp/n-eight-n/workflows/Tests/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/test.yml)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
@@ -57,7 +57,7 @@ This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Ke
 
 ### Prerequisites
 
-- Python 3.11 or higher
+- Python 3.12
 - Docker (optional, for containerized deployment)
 - GitHub OAuth App credentials (for full functionality)
 

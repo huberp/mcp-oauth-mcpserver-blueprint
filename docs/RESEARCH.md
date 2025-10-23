@@ -167,7 +167,7 @@ The MCP specification 2025-03-26 includes comprehensive OAuth 2.1 support with t
 
 #### 1. Use Minimal Base Images
 ```dockerfile
-FROM python:3.11-slim
+FROM python:3.12-slim
 ```
 - Reduces attack surface
 - Smaller image size
@@ -175,12 +175,12 @@ FROM python:3.11-slim
 
 #### 2. Multi-Stage Builds
 ```dockerfile
-FROM python:3.11 AS builder
+FROM python:3.12 AS builder
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --user -r requirements.txt
 
-FROM python:3.11-slim
+FROM python:3.12-slim
 WORKDIR /app
 COPY --from=builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH

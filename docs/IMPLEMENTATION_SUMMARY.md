@@ -8,7 +8,7 @@ Successfully implemented a production-ready Model Context Protocol (MCP) server 
 
 **Selected Approach**: Option 1 - FastMCP + Authlib
 - **Rationale**: Best balance of development speed, features, and maintainability
-- **Technologies**: Python 3.11+, FastMCP, Authlib, httpx, pytest, Docker
+- **Technologies**: Python 3.12, FastMCP, Authlib, httpx, pytest, Docker
 
 ## Project Structure
 
@@ -295,5 +295,5 @@ The server is ready for deployment and can be easily extended with additional pr
 
 **Implementation Date**: 2025-10-23  
 **Version**: 0.1.0  
-**Python Version**: 3.11+  
+**Python Version**: 3.12  
 **License**: MIT

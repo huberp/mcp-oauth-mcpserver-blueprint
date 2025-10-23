@@ -7,7 +7,7 @@ This project is a Model Context Protocol (MCP) server with OAuth 2.1 authenticat
 ## Code Style and Standards
 
 ### Python Style
-- **Python Version**: Target Python 3.11+
+- **Python Version**: Target Python 3.12
 - **Formatting**: Use Black with 100 character line length
 - **Linting**: Follow Ruff configuration in pyproject.toml
 - **Type Hints**: All functions must have complete type hints
