@@ -10,12 +10,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy only dependency specifications first for better caching
 COPY pyproject.toml ./
 
-# Install Python dependencies to user directory
-RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --user --no-cache-dir .
+# Extract and install dependencies directly
+# Using --trusted-host to handle SSL certificate issues in CI/CD environments
+RUN pip install --user --no-cache-dir \
+    --trusted-host pypi.org \
+    --trusted-host pypi.python.org \
+    --trusted-host files.pythonhosted.org \
+    fastmcp>=0.1.0 \
+    authlib>=1.3.0 \
+    httpx>=0.27.0 \
+    python-dotenv>=1.0.0 \
+    pydantic>=2.0.0 \
+    pydantic-settings>=2.0.0
 
 # Stage 2: Runtime stage
 FROM python:3.12-slim
@@ -23,18 +32,23 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
-
-# Update PATH
-ENV PATH=/root/.local/bin:$PATH
-
 # Create non-root user for security
-RUN useradd -m -u 1000 mcpuser && \
-    chown -R mcpuser:mcpuser /app
+RUN useradd -m -u 1000 mcpuser
+
+# Copy Python dependencies from builder to mcpuser's home
+COPY --from=builder --chown=mcpuser:mcpuser /root/.local /home/mcpuser/.local
+
+# Update PATH for mcpuser
+ENV PATH=/home/mcpuser/.local/bin:$PATH
+
+# Set ownership of app directory
+RUN chown -R mcpuser:mcpuser /app
 
 # Copy application code
 COPY --chown=mcpuser:mcpuser src/ ./src/
+
+# Add src to PYTHONPATH so Python can find the modules
+ENV PYTHONPATH=/app/src:$PYTHONPATH
 
 # Switch to non-root user
 USER mcpuser
