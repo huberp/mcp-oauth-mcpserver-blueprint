@@ -90,6 +90,8 @@ This will:
 
 ### 3. Configure OAuth Credentials
 
+📖 **For detailed setup instructions, see [GitHub OAuth Setup Guide](docs/setup-auth-github.md)**
+
 Edit `.env` file with your GitHub OAuth App credentials:
 
 ```bash
@@ -100,7 +102,7 @@ OAUTH_TOKEN_URL=https://github.com/login/oauth/access_token
 OAUTH_SCOPES=read:user,repo
 ```
 
-**Creating a GitHub OAuth App:**
+**Quick Start - Creating a GitHub OAuth App:**
 1. Go to GitHub Settings → Developer settings → OAuth Apps
 2. Click "New OAuth App"
 3. Fill in the details:
@@ -108,6 +110,8 @@ OAUTH_SCOPES=read:user,repo
    - Homepage URL: http://localhost:8080
    - Authorization callback URL: http://localhost:8080/callback
 4. Copy the Client ID and generate a Client Secret
+
+💡 **Need help?** Check the [comprehensive setup guide](docs/setup-auth-github.md) for step-by-step instructions, troubleshooting, and testing.
 
 ### 4. Run Tests
 
@@ -385,6 +389,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 For issues, questions, or contributions, please:
 - Open an issue on [GitHub](https://github.com/huberp/n-eight-n/issues)
+- Check the [GitHub OAuth Setup Guide](docs/setup-auth-github.md) for authentication setup
 - Check the [documentation](docs/RESEARCH.md) for detailed implementation notes
 
 ## Acknowledgments
