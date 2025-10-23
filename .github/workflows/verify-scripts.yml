@@ -94,3 +94,78 @@ jobs:
           echo "Error: Some bash scripts are not executable"
           exit 1
         fi
+
+  run-setup-script:
+    name: Run Setup Script
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Run setup.sh script
+      run: |
+        echo "=== Testing setup.sh script execution ==="
+        ./scripts/setup.sh
+        echo "✓ setup.sh completed successfully"
+
+    - name: Verify setup results
+      run: |
+        echo "=== Verifying setup results ==="
+        [ -d "venv" ] && echo "✓ Virtual environment created"
+        [ -f ".env" ] && echo "✓ .env file created"
+        source venv/bin/activate
+        python --version
+        pip list | grep -i mcp-server && echo "✓ Package installed"
+
+  run-test-script:
+    name: Run Test Script
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Setup environment
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -e ".[dev]"
+
+    - name: Run test.sh script
+      run: |
+        echo "=== Testing test.sh script execution ==="
+        ./scripts/test.sh
+        echo "✓ test.sh completed successfully"
+
+  run-build-docker-script:
+    name: Run Docker Build Script
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Run build-docker.sh script
+      run: |
+        echo "=== Testing build-docker.sh script execution ==="
+        ./scripts/build-docker.sh
+        echo "✓ build-docker.sh completed successfully"
+
+    - name: Verify Docker image was created
+      run: |
+        echo "=== Verifying Docker image ==="
+        docker images | grep mcp-oauth-server
+        docker run --rm mcp-oauth-server:latest python -c "import mcp_server; print('✓ MCP Server version:', mcp_server.__version__)"
