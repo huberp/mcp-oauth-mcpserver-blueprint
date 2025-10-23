@@ -6,7 +6,6 @@ from typing import Any
 
 from mcp.server import Server
 from mcp.types import (
-    ClientCapabilities,
     ModelHint,
     ModelPreferences,
     Prompt,
@@ -260,8 +259,14 @@ State (for verification): {state}"""
             return [TextContent(type="text", text=f"Error: {error_msg}")]
 
         # Check if client supports sampling capability
+        # Access the client's capabilities and check if sampling is present
         try:
-            has_sampling = session.check_client_capability(ClientCapabilities.sampling)
+            client_capabilities = session.client_params.capabilities if session.client_params else None
+            has_sampling = (
+                client_capabilities is not None
+                and hasattr(client_capabilities, "sampling")
+                and client_capabilities.sampling is not None
+            )
         except Exception as e:
             logger.warning(f"Error checking client capability: {e}")
             has_sampling = False
@@ -322,8 +327,13 @@ State (for verification): {state}"""
                 ),
             )
 
-            # Extract the response
-            response_text = result.content.text
+            # Extract the response - handle different content types safely
+            response_content = result.content
+            if hasattr(response_content, "text"):
+                response_text = response_content.text  # type: ignore[attr-defined]
+            else:
+                response_text = str(response_content)
+
             model_used = result.model
             stop_reason = result.stopReason
 

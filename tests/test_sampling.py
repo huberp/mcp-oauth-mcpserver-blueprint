@@ -1,13 +1,7 @@
 """Tests for MCP sampling capability."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-
-from mcp.types import (
-    ClientCapabilities,
-    CreateMessageResult,
-    TextContent,
-)
+from mcp.types import ClientCapabilities
 
 from mcp_server.server import create_mcp_server
 
@@ -39,14 +33,13 @@ async def test_server_creation_with_sampling() -> None:
     # We can't directly test them without a full MCP session setup,
     # but we can verify the server object exists and has the right type
     from mcp.server import Server
+
     assert isinstance(server, Server)
 
 
 @pytest.mark.asyncio
 async def test_sampling_capability_check() -> None:
     """Test checking for sampling capability."""
-    from mcp.types import ClientCapabilities
-
     # This is a simple test to verify the ClientCapabilities type exists
     # and has the sampling field
     assert "sampling" in ClientCapabilities.model_fields
