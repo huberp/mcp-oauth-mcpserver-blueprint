@@ -4,7 +4,9 @@
 
 This document provides comprehensive research on implementing a Model Context Protocol (MCP) server in Python with OAuth 2.1 support, packaged as a Docker container for local execution in MCP hosts like Visual Studio Code.
 
-## 1. Model Context Protocol (MCP) Specification 2025-03-26
+**Note**: This implementation is updated to comply with MCP Specification 2025-06-18. See [SPEC_UPDATE_2025-06-18.md](SPEC_UPDATE_2025-06-18.md) for detailed changes from the previous 2025-03-26 version.
+
+## 1. Model Context Protocol (MCP) Specification 2025-06-18
 
 ### Overview
 The Model Context Protocol is a standardized protocol for enabling AI assistants to interact with external systems, tools, and data sources in a secure and structured manner.
@@ -12,25 +14,28 @@ The Model Context Protocol is a standardized protocol for enabling AI assistants
 ### Key Features
 - **Standardized Communication**: Defines how AI assistants communicate with external services
 - **Resource Management**: Access to files, databases, and external APIs
-- **Tool Integration**: Execute functions and call external services
-- **Prompt Templates**: Reusable prompt patterns
-- **Security**: Built-in authorization and authentication mechanisms
+- **Tool Integration**: Execute functions and call external services with structured outputs
+- **Prompt Templates**: Reusable prompt patterns with enhanced metadata
+- **Security**: Built-in authorization with OAuth 2.1 and Resource Indicators (RFC 8707)
+- **Elicitation Support**: Servers can request additional information from users
 
 ### Official Specification Links
-- **Primary Specification**: https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization
-- **GitHub Source**: https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/basic/authorization.mdx
+- **Primary Specification**: https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization
+- **Changelog**: https://modelcontextprotocol.io/specification/2025-06-18/changelog
+- **GitHub Source**: https://github.com/modelcontextprotocol/modelcontextprotocol
 - **Documentation Portal**: https://modelcontextprotocol.io/docs/sdk
 
 ## 2. OAuth Integration in MCP
 
-### OAuth 2.1 Support
-The MCP specification 2025-03-26 includes comprehensive OAuth 2.1 support with the following features:
+### OAuth 2.1 Support with Resource Server Classification
+The MCP specification 2025-06-18 classifies MCP servers as OAuth Resource Servers and includes comprehensive OAuth 2.1 support with the following features:
 
 #### Supported OAuth Flows
 1. **Authorization Code Flow with PKCE** (Recommended for public clients)
    - Enhanced security for mobile and single-page applications
    - Prevents authorization code interception attacks
    - Required for public clients
+   - **NEW**: Must include Resource Indicators (RFC 8707)
 
 2. **Client Credentials Flow**
    - For server-to-server authentication
@@ -44,10 +49,18 @@ The MCP specification 2025-03-26 includes comprehensive OAuth 2.1 support with t
 
 #### Security Features
 - **PKCE (Proof Key for Code Exchange)**: Mandatory for public clients
+- **Resource Indicators (RFC 8707)**: Required for secure token scoping
 - **State Parameter**: Prevents CSRF attacks
 - **Token Rotation**: Refresh token rotation for enhanced security
 - **Scope Management**: Fine-grained access control
 - **OAuth 2.0 Authorization Server Metadata**: Automatic discovery of OAuth endpoints
+
+#### New in 2025-06-18: Resource Indicators
+MCP clients must implement RFC 8707 Resource Indicators to:
+- Specify the target resource server in token requests
+- Restrict token usage to specific resources
+- Enhance security by preventing token misuse
+- Include `resource` parameter in OAuth token requests
 
 #### Reference Links
 - **OAuth Specification**: https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization

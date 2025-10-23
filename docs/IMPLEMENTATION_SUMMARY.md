@@ -238,7 +238,7 @@ docker run --env-file .env -i mcp-oauth-server:latest
 
 ## Compliance & Standards
 
-- ✅ **MCP Specification**: Compliant with 2025-03-26 spec
+- ✅ **MCP Specification**: Compliant with 2025-06-18 spec
 - ✅ **OAuth 2.1**: Full implementation with PKCE
 - ✅ **Python PEP**: Follows PEP 8, PEP 484 (type hints)
 - ✅ **Docker Best Practices**: Multi-stage, non-root, health checks

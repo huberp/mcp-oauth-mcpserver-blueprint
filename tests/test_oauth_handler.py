@@ -1,4 +1,4 @@
-"""Tests for OAuth handler module."""
+"""Tests for OAuth handler module with RFC 8707 Resource Indicators support."""
 
 from typing import Any
 
@@ -12,15 +12,23 @@ from mcp_server.oauth_handler import OAuthHandler
 @pytest.fixture
 def oauth_handler() -> OAuthHandler:
     """Create an OAuth handler instance for testing."""
-    return OAuthHandler()
+    return OAuthHandler(resource_uri="https://api.github.com")
 
 
 def test_oauth_handler_initialization(oauth_handler: OAuthHandler) -> None:
-    """Test OAuth handler initializes correctly."""
+    """Test OAuth handler initializes correctly with resource URI."""
     assert oauth_handler.client_id == "test_client_id"
     assert oauth_handler.client_secret == "test_client_secret"
     assert oauth_handler.access_token is None
     assert oauth_handler.refresh_token is None
+    assert oauth_handler.resource_uri == "https://api.github.com"
+
+
+def test_oauth_handler_initialization_default_resource() -> None:
+    """Test OAuth handler uses default resource URI from settings."""
+    handler = OAuthHandler()
+    # Should use API base URL from settings (which is test configuration)
+    assert handler.resource_uri == "https://api.test.example.com"
 
 
 def test_generate_pkce_pair(oauth_handler: OAuthHandler) -> None:
@@ -48,6 +56,9 @@ def test_get_authorization_url(oauth_handler: OAuthHandler) -> None:
     assert isinstance(code_verifier, str)
 
 
+def test_get_resource_uri(oauth_handler: OAuthHandler) -> None:
+    """Test getting the resource URI for RFC 8707."""
+    assert oauth_handler.get_resource_uri() == "https://api.github.com"
 def test_get_authorization_url_with_state(oauth_handler: OAuthHandler) -> None:
     """Test authorization URL with custom state."""
     custom_state = "my_custom_state_123"

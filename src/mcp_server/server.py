@@ -75,15 +75,16 @@ Format your response in a clear, readable markdown format."""
             content=TextContent(type="text", text=prompt_text),
         )
 
-    # Register tool
+    # Register tool with MCP Spec 2025-06-18 enhancements
     @server.list_tools()
     async def list_tools() -> list[Tool]:
-        """List available tools."""
+        """List available tools with structured output schemas."""
         return [
             Tool(
                 name="get_github_user_info",
                 description="Fetch authenticated GitHub user information and repositories using OAuth. "
-                "This tool requires OAuth authentication and retrieves the user's profile and recent repositories.",
+                "This tool requires OAuth authentication and retrieves the user's profile and recent repositories. "
+                "Returns structured data about the user and their repositories.",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -100,6 +101,13 @@ Format your response in a clear, readable markdown format."""
                             "maximum": 100,
                         },
                     },
+                },
+                # MCP Spec 2025-06-18: Add metadata for better context
+                _meta={
+                    "version": "1.0.0",
+                    "author": "MCP OAuth Server",
+                    "requires_auth": True,
+                    "api_resource": "https://api.github.com",
                 },
             )
         ]

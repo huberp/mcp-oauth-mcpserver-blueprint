@@ -1,4 +1,8 @@
-"""OAuth 2.1 authentication handler with PKCE support."""
+"""OAuth 2.1 authentication handler with PKCE and RFC 8707 Resource Indicators support.
+
+This module implements OAuth 2.1 flows as an OAuth Resource Server per MCP Specification 2025-06-18.
+It supports RFC 8707 Resource Indicators for enhanced security.
+"""
 
 import secrets
 from typing import Any
@@ -11,15 +15,27 @@ from .config import settings
 
 
 class OAuthHandler:
-    """Handles OAuth 2.1 authentication flows with PKCE support."""
+    """
+    Handles OAuth 2.1 authentication flows with PKCE and Resource Indicators support.
 
-    def __init__(self) -> None:
-        """Initialize OAuth handler with configuration."""
+    This class implements OAuth Resource Server behavior as per MCP Specification 2025-06-18,
+    including support for RFC 8707 Resource Indicators for token scoping.
+    """
+
+    def __init__(self, resource_uri: str | None = None) -> None:
+        """
+        Initialize OAuth handler with configuration.
+
+        Args:
+            resource_uri: Optional resource URI for RFC 8707 Resource Indicators.
+                         If not provided, uses the API base URL from settings.
+        """
         self.client_id = settings.oauth_client_id
         self.client_secret = settings.oauth_client_secret
         self.authorization_url = settings.oauth_authorization_url
         self.token_url = settings.oauth_token_url
         self.scopes = settings.oauth_scopes_list
+        self.resource_uri = resource_uri or settings.api_base_url
         self.access_token: str | None = None
         self.refresh_token: str | None = None
         self._code_verifier: str | None = None
@@ -68,7 +84,7 @@ class OAuthHandler:
         self, code: str, code_verifier: str, redirect_uri: str = "http://localhost:8080/callback"
     ) -> dict[str, Any]:
         """
-        Exchange authorization code for access token.
+        Exchange authorization code for access token with Resource Indicator (RFC 8707).
 
         Args:
             code: Authorization code from OAuth provider
@@ -86,12 +102,14 @@ class OAuthHandler:
             client_secret=self.client_secret,
             token_endpoint=self.token_url,
         ) as client:
+            # Include RFC 8707 Resource Indicator for token scoping
             token = await client.fetch_token(
                 url=self.token_url,
                 grant_type="authorization_code",
                 code=code,
                 code_verifier=code_verifier,
                 redirect_uri=redirect_uri,
+                resource=self.resource_uri,  # RFC 8707 Resource Indicator
             )
 
             self.access_token = token.get("access_token")
@@ -101,7 +119,7 @@ class OAuthHandler:
 
     async def refresh_access_token(self) -> dict[str, Any]:
         """
-        Refresh access token using refresh token.
+        Refresh access token using refresh token with Resource Indicator (RFC 8707).
 
         Returns:
             New token response dictionary
@@ -118,9 +136,11 @@ class OAuthHandler:
             client_secret=self.client_secret,
             token_endpoint=self.token_url,
         ) as client:
+            # Include RFC 8707 Resource Indicator for token scoping
             token = await client.refresh_token(
                 url=self.token_url,
                 refresh_token=self.refresh_token,
+                resource=self.resource_uri,  # RFC 8707 Resource Indicator
             )
 
             self.access_token = token.get("access_token")
@@ -146,3 +166,12 @@ class OAuthHandler:
     def is_authenticated(self) -> bool:
         """Check if user is authenticated with valid token."""
         return self.access_token is not None
+
+    def get_resource_uri(self) -> str:
+        """
+        Get the resource URI for RFC 8707 Resource Indicators.
+
+        Returns:
+            The resource URI that tokens are scoped to
+        """
+        return self.resource_uri

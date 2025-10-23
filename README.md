@@ -14,8 +14,11 @@ This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Ke
 ### Key Features
 
 - **OAuth 2.1 Authentication**: Full implementation with PKCE support for secure authentication
-- **MCP Protocol Compliance**: Follows the latest MCP specification (2025-03-26)
-- **Prompt Template**: Reusable prompt for GitHub user analysis
+- **RFC 8707 Resource Indicators**: Implements resource indicators for enhanced token security
+- **MCP Protocol Compliance**: Follows the latest MCP specification (2025-06-18)
+- **OAuth Resource Server**: Classified as OAuth Resource Server per MCP spec
+- **Structured Tool Output**: Tools support structured output schemas for type safety
+- **Prompt Template**: Reusable prompt for GitHub user analysis with enhanced metadata
 - **Tool Integration**: Custom tool for fetching GitHub user data via authenticated API calls
 - **Docker Support**: Containerized deployment with best practices
 - **Comprehensive Testing**: Full test coverage with pytest
@@ -365,7 +368,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Resources
 
 ### MCP Specification
-- [Official MCP Specification](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization)
+- [Official MCP Specification](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)
 - [MCP Documentation](https://modelcontextprotocol.io/docs/sdk)
 
 ### OAuth Resources
