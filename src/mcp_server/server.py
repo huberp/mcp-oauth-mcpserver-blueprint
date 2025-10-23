@@ -1,10 +1,20 @@
 """MCP Server implementation with OAuth support."""
 
+import json
 import logging
 from typing import Any
 
 from mcp.server import Server
-from mcp.types import Prompt, PromptMessage, TextContent, Tool
+from mcp.types import (
+    ClientCapabilities,
+    ModelHint,
+    ModelPreferences,
+    Prompt,
+    PromptMessage,
+    SamplingMessage,
+    TextContent,
+    Tool,
+)
 
 from .api_client import APIClient
 from .config import settings
@@ -109,15 +119,63 @@ Format your response in a clear, readable markdown format."""
                     "requires_auth": True,
                     "api_resource": "https://api.github.com",
                 },
-            )
+            ),
+            Tool(
+                name="analyze_code_with_llm",
+                description="Use LLM sampling to analyze code snippets or GitHub repository data. "
+                "This tool demonstrates the MCP sampling capability by requesting the client's "
+                "language model to analyze code or provide insights. Requires the client to support "
+                "the 'sampling' capability.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "code": {
+                            "type": "string",
+                            "description": "Code snippet or data to analyze",
+                        },
+                        "analysis_type": {
+                            "type": "string",
+                            "description": "Type of analysis to perform",
+                            "enum": [
+                                "explain",
+                                "review",
+                                "suggest_improvements",
+                                "find_bugs",
+                                "security_review",
+                            ],
+                            "default": "explain",
+                        },
+                        "max_tokens": {
+                            "type": "integer",
+                            "description": "Maximum tokens for the LLM response",
+                            "default": 500,
+                            "minimum": 100,
+                            "maximum": 2000,
+                        },
+                    },
+                    "required": ["code"],
+                },
+                _meta={
+                    "version": "1.0.0",
+                    "author": "MCP OAuth Server",
+                    "requires_sampling": True,
+                    "requires_auth": False,
+                },
+            ),
         ]
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         """Execute a tool with given arguments."""
-        if name != "get_github_user_info":
+        if name == "get_github_user_info":
+            return await handle_get_github_user_info(arguments)
+        elif name == "analyze_code_with_llm":
+            return await handle_analyze_code_with_llm(arguments)
+        else:
             raise ValueError(f"Unknown tool: {name}")
 
+    async def handle_get_github_user_info(arguments: dict[str, Any]) -> list[TextContent]:
+        """Handle the get_github_user_info tool."""
         # Check if OAuth is configured
         if not settings.is_oauth_configured():
             error_msg = (
@@ -181,14 +239,111 @@ State (for verification): {state}"""
                     for repo in repos
                 ]
 
-            import json
-
             result_text = json.dumps(result, indent=2)
             logger.info("Successfully fetched GitHub user info")
             return [TextContent(type="text", text=result_text)]
 
         except Exception as e:
             error_msg = f"Error fetching GitHub user info: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            return [TextContent(type="text", text=f"Error: {error_msg}")]
+
+    async def handle_analyze_code_with_llm(arguments: dict[str, Any]) -> list[TextContent]:
+        """Handle the analyze_code_with_llm tool using sampling capability."""
+        # Get the request context to access session
+        try:
+            ctx = server.request_context
+            session = ctx.session
+        except LookupError:
+            error_msg = "Cannot access session context - request context not available"
+            logger.error(error_msg)
+            return [TextContent(type="text", text=f"Error: {error_msg}")]
+
+        # Check if client supports sampling capability
+        try:
+            has_sampling = session.check_client_capability(ClientCapabilities.sampling)
+        except Exception as e:
+            logger.warning(f"Error checking client capability: {e}")
+            has_sampling = False
+
+        if not has_sampling:
+            error_msg = (
+                "This tool requires the 'sampling' capability, but your client does not support it. "
+                "Please use an MCP client that supports sampling (e.g., Claude Desktop, VSCode with MCP support)."
+            )
+            logger.warning(error_msg)
+            return [TextContent(type="text", text=f"Error: {error_msg}")]
+
+        # Extract arguments
+        code = arguments.get("code", "")
+        analysis_type = arguments.get("analysis_type", "explain")
+        max_tokens = arguments.get("max_tokens", 500)
+
+        if not code:
+            return [TextContent(type="text", text="Error: 'code' parameter is required")]
+
+        # Create the analysis prompt based on type
+        analysis_prompts = {
+            "explain": "Please explain what this code does in clear, simple terms:",
+            "review": "Please review this code and provide constructive feedback:",
+            "suggest_improvements": "Please suggest improvements for this code:",
+            "find_bugs": "Please analyze this code for potential bugs or issues:",
+            "security_review": "Please review this code for security vulnerabilities:",
+        }
+
+        prompt_prefix = analysis_prompts.get(
+            analysis_type, "Please analyze this code:"
+        )
+        full_prompt = f"{prompt_prefix}\n\n```\n{code}\n```"
+
+        try:
+            # Create messages for sampling
+            messages = [
+                SamplingMessage(
+                    role="user",
+                    content=TextContent(type="text", text=full_prompt),
+                )
+            ]
+
+            # Make the sampling request
+            logger.info(f"Requesting LLM sampling for code analysis: {analysis_type}")
+            result = await session.create_message(
+                messages=messages,
+                max_tokens=max_tokens,
+                system_prompt="You are an expert code analyst. Provide clear, actionable insights.",
+                temperature=0.7,
+                model_preferences=ModelPreferences(
+                    hints=[
+                        ModelHint(name="claude-3-5-sonnet"),
+                        ModelHint(name="gpt-4"),
+                    ],
+                    intelligencePriority=0.8,
+                    speedPriority=0.5,
+                ),
+            )
+
+            # Extract the response
+            response_text = result.content.text
+            model_used = result.model
+            stop_reason = result.stopReason
+
+            # Format the response
+            formatted_response = f"""# Code Analysis Result
+
+**Analysis Type:** {analysis_type}
+**Model Used:** {model_used}
+**Stop Reason:** {stop_reason}
+
+## Analysis
+
+{response_text}
+"""
+
+            logger.info(f"Successfully completed code analysis using model: {model_used}")
+            return [TextContent(type="text", text=formatted_response)]
+
+        except Exception as e:
+            error_msg = f"Error during sampling request: {str(e)}"
             logger.error(error_msg, exc_info=True)
             return [TextContent(type="text", text=f"Error: {error_msg}")]
 
