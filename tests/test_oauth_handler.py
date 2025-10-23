@@ -1,7 +1,6 @@
 """Tests for OAuth handler module."""
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import respx

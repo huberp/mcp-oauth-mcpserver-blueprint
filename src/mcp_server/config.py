@@ -1,6 +1,5 @@
 """Configuration management for MCP OAuth Server."""
 
-from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

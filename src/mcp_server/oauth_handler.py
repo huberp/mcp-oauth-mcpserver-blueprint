@@ -1,11 +1,9 @@
 """OAuth 2.1 authentication handler with PKCE support."""
 
-import hashlib
 import secrets
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlencode
 
-import httpx
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from authlib.oauth2.rfc7636 import create_s256_code_challenge
 
@@ -22,9 +20,9 @@ class OAuthHandler:
         self.authorization_url = settings.oauth_authorization_url
         self.token_url = settings.oauth_token_url
         self.scopes = settings.oauth_scopes_list
-        self.access_token: Optional[str] = None
-        self.refresh_token: Optional[str] = None
-        self._code_verifier: Optional[str] = None
+        self.access_token: str | None = None
+        self.refresh_token: str | None = None
+        self._code_verifier: str | None = None
 
     def generate_pkce_pair(self) -> tuple[str, str]:
         """
@@ -37,7 +35,7 @@ class OAuthHandler:
         code_challenge = create_s256_code_challenge(code_verifier)
         return code_verifier, code_challenge
 
-    def get_authorization_url(self, state: Optional[str] = None) -> tuple[str, str, str]:
+    def get_authorization_url(self, state: str | None = None) -> tuple[str, str, str]:
         """
         Generate OAuth authorization URL with PKCE.
 

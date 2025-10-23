@@ -1,6 +1,6 @@
 """API client for making OAuth-protected HTTP requests."""
 
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -79,8 +79,8 @@ class APIClient:
         self,
         method: str,
         endpoint: str,
-        params: Optional[dict[str, Any]] = None,
-        json: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Make an authenticated API request.
