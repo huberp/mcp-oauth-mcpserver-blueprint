@@ -17,9 +17,10 @@ This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Ke
 - **RFC 8707 Resource Indicators**: Implements resource indicators for enhanced token security
 - **MCP Protocol Compliance**: Follows the latest MCP specification (2025-06-18)
 - **OAuth Resource Server**: Classified as OAuth Resource Server per MCP spec
+- **MCP Sampling Support**: Demonstrates client sampling capability for LLM-powered code analysis
 - **Structured Tool Output**: Tools support structured output schemas for type safety
 - **Prompt Template**: Reusable prompt for GitHub user analysis with enhanced metadata
-- **Tool Integration**: Custom tool for fetching GitHub user data via authenticated API calls
+- **Tool Integration**: Custom tools for fetching GitHub user data and analyzing code with LLMs
 - **Docker Support**: Containerized deployment with best practices
 - **Comprehensive Testing**: Full test coverage with pytest
 - **Type Safety**: Complete type hints with mypy validation
@@ -32,22 +33,23 @@ This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Ke
 │                   MCP Host (VS Code)                         │
 │                                                              │
 │  ┌────────────────────────────────────────────────────┐    │
-│  │              AI Assistant                           │    │
-│  └───────────────────┬────────────────────────────────┘    │
-│                      │ MCP Protocol                         │
-└──────────────────────┼──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│           Docker Container (MCP Server)                      │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐   │
+│  │       AI Assistant (with Sampling Support)          │    │
+│  └────────────┬──────────────────┬────────────────────┘    │
+│               │ MCP Protocol     │ Sampling Requests       │
+└───────────────┼──────────────────┼──────────────────────────┘
+                │                  │
+                ▼                  │
+┌─────────────────────────────────┼────────────────────────────┐
+│           Docker Container (MCP │Server)                      │
+│                                 │                            │
+│  ┌──────────────────────────────▼──────────────────────┐   │
 │  │  MCP Server (FastMCP)                                │   │
 │  │  - OAuth 2.1 Handler (PKCE)                          │   │
 │  │  - GitHub API Client                                 │   │
 │  │  - Prompt: github_user_summary                       │   │
-│  │  - Tool: get_github_user_info                        │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  │  - Tool: get_github_user_info (OAuth)                │   │
+│  │  - Tool: analyze_code_with_llm (Sampling)            │   │
+│  └──────────────────────────────────────────────────────┘   │
 └──────────────────────┬───────────────────────────────────────┘
                        │
                        ▼
@@ -195,6 +197,39 @@ Fetches authenticated GitHub user information and repositories using OAuth.
 ```
 Use the get_github_user_info tool to fetch my GitHub profile and top 10 repositories
 ```
+
+#### Tool: `analyze_code_with_llm` (Requires Sampling Capability)
+
+Uses MCP sampling to analyze code snippets with the help of a language model. This tool demonstrates the MCP sampling capability by requesting the client's language model to analyze code or provide insights.
+
+**Parameters:**
+- `code` (string, required): Code snippet or data to analyze
+- `analysis_type` (string, default: "explain"): Type of analysis to perform
+  - `explain`: Explain what the code does
+  - `review`: Review the code and provide feedback
+  - `suggest_improvements`: Suggest improvements for the code
+  - `find_bugs`: Analyze for potential bugs or issues
+  - `security_review`: Review for security vulnerabilities
+- `max_tokens` (integer, default: 500): Maximum tokens for the LLM response (100-2000)
+
+**Requirements:**
+- Client must support the MCP `sampling` capability
+- No OAuth authentication required
+
+**Returns:**
+- Analysis result with model information
+- Insights based on the selected analysis type
+
+**Example usage in MCP host:**
+```
+Use the analyze_code_with_llm tool to explain this code:
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+```
+
+**Note:** This tool will return an error if the client does not support sampling. Supported clients include Claude Desktop and VS Code with MCP support.
 
 ### MCP Host Configuration (VS Code)
 
