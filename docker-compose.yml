@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-oauth-server
+    environment:
+      # OAuth Configuration
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_AUTHORIZATION_URL: ${OAUTH_AUTHORIZATION_URL:-https://github.com/login/oauth/authorize}
+      OAUTH_TOKEN_URL: ${OAUTH_TOKEN_URL:-https://github.com/login/oauth/access_token}
+      OAUTH_SCOPES: ${OAUTH_SCOPES:-read:user}
+      
+      # API Configuration
+      API_BASE_URL: ${API_BASE_URL:-https://api.github.com}
+      API_TIMEOUT: ${API_TIMEOUT:-30}
+      
+      # Server Configuration
+      SERVER_NAME: ${SERVER_NAME:-mcp-oauth-server}
+      SERVER_VERSION: ${SERVER_VERSION:-0.1.0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      
+      # Development Settings
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+    
+    # Use stdin/stdout for MCP protocol
+    stdin_open: true
+    tty: true
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
