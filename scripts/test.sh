@@ -8,6 +8,7 @@ echo ""
 
 # Activate virtual environment if it exists
 if [ -d "venv" ]; then
+    # shellcheck source=/dev/null
     source venv/bin/activate
 fi
 

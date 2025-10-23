@@ -8,6 +8,7 @@ echo ""
 
 # Activate virtual environment if it exists
 if [ -d "venv" ]; then
+    # shellcheck source=/dev/null
     source venv/bin/activate
 fi
 
@@ -20,7 +21,10 @@ fi
 
 # Load environment variables if .env exists
 if [ -f ".env" ]; then
-    export $(cat .env | grep -v '^#' | xargs)
+    set -a
+    # shellcheck source=/dev/null
+    . .env
+    set +a
 fi
 
 # Run the server

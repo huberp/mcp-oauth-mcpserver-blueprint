@@ -1,0 +1,93 @@
+name: Verify Scripts
+
+on:
+  push:
+    branches: [ main, develop, 'copilot/**' ]
+    paths:
+      - 'scripts/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'scripts/**'
+
+jobs:
+  verify-bash-scripts:
+    name: Verify Bash Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install shellcheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+
+    - name: Run shellcheck on bash scripts
+      run: |
+        echo "=== Running shellcheck on bash scripts ==="
+        shellcheck scripts/*.sh
+        echo "✓ All bash scripts passed shellcheck"
+
+    - name: Verify bash script syntax
+      run: |
+        echo "=== Verifying bash script syntax ==="
+        for script in scripts/*.sh; do
+          echo "Checking $script..."
+          bash -n "$script"
+        done
+        echo "✓ All bash scripts have valid syntax"
+
+  verify-powershell-scripts:
+    name: Verify PowerShell Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Verify PowerShell script syntax
+      run: |
+        echo "=== Verifying PowerShell script syntax ==="
+        for script in scripts/*.ps1; do
+          echo "Checking $script..."
+          pwsh -Command "
+            \$ErrorActionPreference = 'Stop'
+            try {
+              \$null = [System.Management.Automation.PSParser]::Tokenize((Get-Content '$script' -Raw), [ref]\$null)
+              Write-Host '✓ $script syntax is valid'
+            } catch {
+              Write-Error 'Syntax error in $script: \$_'
+              exit 1
+            }
+          "
+        done
+        echo "✓ All PowerShell scripts have valid syntax"
+
+  verify-script-permissions:
+    name: Verify Script Permissions
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Verify bash scripts are executable
+      run: |
+        echo "=== Verifying bash script permissions ==="
+        exit_code=0
+        for script in scripts/*.sh; do
+          if [ -x "$script" ]; then
+            echo "✓ $script is executable"
+          else
+            echo "✗ $script is not executable"
+            exit_code=1
+          fi
+        done
+        if [ $exit_code -eq 0 ]; then
+          echo "✓ All bash scripts are executable"
+        else
+          echo "Error: Some bash scripts are not executable"
+          exit 1
+        fi
