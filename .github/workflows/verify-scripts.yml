@@ -5,10 +5,13 @@ on:
     branches: [ main, develop, 'copilot/**' ]
     paths:
       - 'scripts/**'
+      - '.github/workflows/verify-scripts.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'scripts/**'
+      - '.github/workflows/verify-scripts.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
