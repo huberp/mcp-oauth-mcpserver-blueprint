@@ -38,7 +38,7 @@ jobs:
         pytest tests/ -v -m "unit or not integration" --cov=src/mcp_server --cov-report=xml
 
     - name: Upload coverage
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
         flags: unit-${{ matrix.os }}-py312
@@ -69,7 +69,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload coverage
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
         flags: integration-py312
