@@ -48,18 +48,18 @@ Before you begin, ensure you have the following installed:
 
 1. **Fork the Repository**
    ```bash
-   # Visit https://github.com/huberp/n-eight-n and click "Fork"
+   # Visit https://github.com/huberp/mcp-oauth-mcpserver-blueprint and click "Fork"
    ```
 
 2. **Clone Your Fork**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/n-eight-n.git
-   cd n-eight-n
+   git clone https://github.com/YOUR_USERNAME/mcp-oauth-mcpserver-blueprint.git
+   cd mcp-oauth-mcpserver-blueprint
    ```
 
 3. **Add Upstream Remote**
    ```bash
-   git remote add upstream https://github.com/huberp/n-eight-n.git
+   git remote add upstream https://github.com/huberp/mcp-oauth-mcpserver-blueprint.git
    ```
 
 4. **Set Up the Development Environment**
