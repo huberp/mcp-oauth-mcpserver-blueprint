@@ -121,7 +121,7 @@ jobs:
         [ -f ".env" ] && echo "✓ .env file created"
         source venv/bin/activate
         python --version
-        pip list | grep -i mcp-server && echo "✓ Package installed"
+        pip list | grep -i mcp-oauth-server && echo "✓ Package installed"
 
   run-test-script:
     name: Run Test Script
