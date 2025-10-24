@@ -4,6 +4,7 @@ A production-ready Model Context Protocol (MCP) server with OAuth 2.1 authentica
 
 [![CI](https://github.com/huberp/n-eight-n/workflows/CI/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/ci.yml)
 [![Tests](https://github.com/huberp/n-eight-n/workflows/Tests/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/test.yml)
+[![MCP Tester](https://github.com/huberp/n-eight-n/workflows/MCP%20Tester/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/mcp-tester.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -263,6 +264,30 @@ Or for local development without Docker:
 }
 ```
 
+## MCP Server Testing
+
+This repository includes automated testing of the MCP server using the MCP Inspector CLI. The workflow runs on every push and pull request, validating that the server correctly reports its available prompts and tools.
+
+### MCP Tester Workflow
+
+The `mcp-tester.yml` workflow:
+- Uses `@modelcontextprotocol/inspector` CLI to test the MCP server
+- Lists all available tools and prompts
+- Generates a summary table in the workflow results
+- Runs automatically on pushes to main, develop, and copilot/** branches
+
+**View test results:** Check the workflow summary in GitHub Actions to see a table of all prompts and tools reported by the MCP server.
+
+**Manual testing:** You can also test the server locally using the MCP Inspector:
+
+```bash
+# Install and test tools
+npx @modelcontextprotocol/inspector --cli --method tools/list python3 -m mcp_server.main
+
+# Install and test prompts
+npx @modelcontextprotocol/inspector --cli --method prompts/list python3 -m mcp_server.main
+```
+
 ## Development
 
 ### Project Structure
@@ -292,7 +317,8 @@ Or for local development without Docker:
 ├── .github/
 │   ├── workflows/           # GitHub Actions CI/CD
 │   │   ├── ci.yml          # Main CI pipeline
-│   │   └── test.yml        # Comprehensive test suite
+│   │   ├── test.yml        # Comprehensive test suite
+│   │   └── mcp-tester.yml  # MCP server validation
 │   └── copilot-instructions.md # Copilot guidelines
 ├── Dockerfile               # Multi-stage Docker build
 ├── docker-compose.yml       # Docker Compose configuration

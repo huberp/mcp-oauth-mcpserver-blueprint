@@ -1,0 +1,158 @@
+name: MCP Tester
+
+on:
+  push:
+    branches: [ main, develop, 'copilot/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test-mcp-server:
+    name: Test MCP Server with Inspector
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install fastmcp authlib httpx python-dotenv pydantic pydantic-settings
+
+    - name: Test MCP Server - List Tools
+      id: list-tools
+      run: |
+        cd src
+        npx --yes @modelcontextprotocol/inspector --cli --method tools/list python3 -m mcp_server.main > /tmp/tools.json 2>&1
+        echo "Tools output:"
+        cat /tmp/tools.json
+
+    - name: Test MCP Server - List Prompts
+      id: list-prompts
+      run: |
+        cd src
+        npx --yes @modelcontextprotocol/inspector --cli --method prompts/list python3 -m mcp_server.main > /tmp/prompts.json 2>&1
+        echo "Prompts output:"
+        cat /tmp/prompts.json
+
+    - name: Generate Summary Report
+      if: always()
+      run: |
+        echo "# MCP Server Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Tools Table
+        echo "## Tools" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Name | Description | Input Schema |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|-------------|--------------|" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f /tmp/tools.json ]; then
+          python3 << 'EOF' >> $GITHUB_STEP_SUMMARY
+        import json
+        import sys
+        
+        try:
+            with open('/tmp/tools.json', 'r') as f:
+                data = json.load(f)
+                tools = data.get('tools', [])
+                
+                for tool in tools:
+                    name = tool.get('name', 'N/A')
+                    description = tool.get('description', 'N/A')
+                    # Truncate description for table readability
+                    if len(description) > 100:
+                        description = description[:97] + '...'
+                    description = description.replace('\n', ' ').replace('|', '\\|')
+                    
+                    # Summarize input schema
+                    schema = tool.get('inputSchema', {})
+                    properties = schema.get('properties', {})
+                    required = schema.get('required', [])
+                    
+                    schema_summary = f"{len(properties)} properties"
+                    if required:
+                        schema_summary += f", {len(required)} required"
+                    
+                    print(f"| {name} | {description} | {schema_summary} |")
+                
+                if not tools:
+                    print("| No tools found | - | - |")
+        except Exception as e:
+            print(f"| Error parsing tools | {str(e)} | - |")
+        EOF
+        else
+          echo "| Error | Could not retrieve tools list | - |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Prompts Table
+        echo "## Prompts" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Name | Description | Arguments |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|-------------|-----------|" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f /tmp/prompts.json ]; then
+          python3 << 'EOF' >> $GITHUB_STEP_SUMMARY
+        import json
+        import sys
+        
+        try:
+            with open('/tmp/prompts.json', 'r') as f:
+                data = json.load(f)
+                prompts = data.get('prompts', [])
+                
+                for prompt in prompts:
+                    name = prompt.get('name', 'N/A')
+                    description = prompt.get('description', 'N/A')
+                    # Truncate description for table readability
+                    if len(description) > 100:
+                        description = description[:97] + '...'
+                    description = description.replace('\n', ' ').replace('|', '\\|')
+                    
+                    # Summarize arguments
+                    arguments = prompt.get('arguments', [])
+                    arg_summary = f"{len(arguments)} arguments"
+                    if arguments:
+                        required_count = sum(1 for arg in arguments if arg.get('required', False))
+                        optional_count = len(arguments) - required_count
+                        arg_summary = f"{required_count} required, {optional_count} optional"
+                    
+                    print(f"| {name} | {description} | {arg_summary} |")
+                
+                if not prompts:
+                    print("| No prompts found | - | - |")
+        except Exception as e:
+            print(f"| Error parsing prompts | {str(e)} | - |")
+        EOF
+        else
+          echo "| Error | Could not retrieve prompts list | - |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "---" >> $GITHUB_STEP_SUMMARY
+        echo "*Test completed at $(date -u '+%Y-%m-%d %H:%M:%S UTC')*" >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: mcp-test-results
+        path: |
+          /tmp/tools.json
+          /tmp/prompts.json
+        retention-days: 30
