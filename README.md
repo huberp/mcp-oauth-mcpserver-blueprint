@@ -418,13 +418,24 @@ pytest -m "not slow"
 
 ## Contributing
 
+We welcome contributions from the community! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed information on:
+
+- Code of Conduct
+- Development setup and workflow
+- Code style and testing requirements
+- Pull request process
+- Commit message guidelines
+
+**Quick Start for Contributors:**
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes
+3. Make your changes following our [code standards](CONTRIBUTING.md#code-style-and-standards)
 4. Run tests: `./scripts/test.sh`
-5. Commit your changes: `git commit -m 'Add amazing feature'`
+5. Commit your changes: `git commit -m 'feat: Add amazing feature'`
 6. Push to the branch: `git push origin feature/amazing-feature`
 7. Open a Pull Request
+
+For detailed guidelines, please read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
