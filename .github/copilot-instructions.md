@@ -62,6 +62,47 @@ pytest -m unit
 pytest -m integration
 ```
 
+### MCP Server Testing and Validation
+
+When developing MCP (Model Context Protocol) servers, always validate that the server correctly reports its capabilities:
+
+#### Testing Tools
+- Use the MCP Inspector CLI (`@modelcontextprotocol/inspector`) for automated testing
+- Validate that all registered tools are correctly reported via `tools/list`
+- Verify tool schemas, descriptions, and metadata are accurate
+- Test that tools handle missing or invalid inputs gracefully
+
+#### Testing Prompts
+- Validate that all registered prompts are correctly reported via `prompts/list`
+- Verify prompt descriptions and argument specifications
+- Test prompt templates with various parameter combinations
+
+#### Automated Testing
+- Add GitHub Actions workflow for continuous MCP server validation
+- Use `--cli` mode for non-interactive testing in CI/CD pipelines
+- Generate summary reports showing available tools and prompts
+- Store test results as artifacts for debugging
+
+#### Local Testing
+```bash
+# Test tools
+npx @modelcontextprotocol/inspector --cli --method tools/list python3 -m mcp_server.main
+
+# Test prompts
+npx @modelcontextprotocol/inspector --cli --method prompts/list python3 -m mcp_server.main
+
+# Test resources (if applicable)
+npx @modelcontextprotocol/inspector --cli --method resources/list python3 -m mcp_server.main
+```
+
+#### Best Practices
+- Run MCP Inspector tests before every release
+- Document all available tools and prompts in README
+- Keep test output as artifacts for reference
+- Validate server capabilities match documentation
+- Test both success and error paths for all endpoints
+- Ensure proper error messages are returned to clients
+
 ## Security Best Practices
 
 ### OAuth Implementation
