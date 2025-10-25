@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "local-server": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "mcp_server.main"],
+      "env": {
+        "SERVER_NAME": "mcp-oauth-server",
+        "SETTINGS_FILE": ".env.local"
+      }
+    }
+  }
+}
