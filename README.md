@@ -15,7 +15,9 @@ This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Ke
 ### Key Features
 
 - **OAuth 2.1 Authentication**: Full implementation with PKCE support for secure authentication
+- **RFC 8414 Authorization Metadata**: Server exposes OAuth metadata for client autodiscovery
 - **RFC 8707 Resource Indicators**: Implements resource indicators for enhanced token security
+- **Structured Error Responses**: JSON-RPC errors with OAuth metadata enable client automation
 - **MCP Protocol Compliance**: Follows the latest MCP specification (2025-06-18)
 - **OAuth Resource Server**: Classified as OAuth Resource Server per MCP spec
 - **MCP Sampling Support**: Demonstrates client sampling capability for LLM-powered code analysis
@@ -371,20 +373,87 @@ black src/ tests/
 | `OAUTH_AUTHORIZATION_URL` | OAuth authorization endpoint | GitHub URL | No |
 | `OAUTH_TOKEN_URL` | OAuth token endpoint | GitHub URL | No |
 | `OAUTH_SCOPES` | Comma-separated OAuth scopes | read:user | No |
+| `OAUTH_ISSUER` | OAuth issuer URL (RFC 8414) | https://github.com | No |
+| `OAUTH_GRANT_TYPES_SUPPORTED` | Supported grant types | authorization_code,refresh_token | No |
+| `OAUTH_CODE_CHALLENGE_METHODS_SUPPORTED` | PKCE methods supported | S256 | No |
 | `API_BASE_URL` | API base URL | https://api.github.com | No |
 | `API_TIMEOUT` | API request timeout (seconds) | 30 | No |
 | `SERVER_NAME` | MCP server name | mcp-oauth-server | No |
 | `LOG_LEVEL` | Logging level | INFO | No |
 | `ENVIRONMENT` | Environment name | development | No |
 
+## Authorization
+
+This server implements **OAuth 2.1 with PKCE** and follows MCP Specification 2025-06-18 for authorization.
+
+### Key Authorization Features
+
+- ✅ **RFC 8414 Compliance**: Exposes authorization server metadata for client autodiscovery
+- ✅ **RFC 8707 Resource Indicators**: Tokens scoped to specific resources
+- ✅ **RFC 7636 PKCE**: Proof Key for Code Exchange for enhanced security
+- ✅ **Structured Error Responses**: JSON-RPC errors with OAuth metadata for client automation
+
+### Authorization Flow
+
+When a client calls a protected tool without authentication, the server returns a structured error response:
+
+```json
+{
+  "code": -32001,
+  "message": "Authentication required",
+  "data": {
+    "type": "oauth2",
+    "grant_type": "authorization_code",
+    "authorization_url": "https://github.com/login/oauth/authorize",
+    "token_url": "https://github.com/login/oauth/access_token",
+    "scopes": ["read:user"],
+    "code_challenge_method": "S256",
+    "resource": "https://api.github.com"
+  }
+}
+```
+
+This enables MCP clients to automatically discover OAuth endpoints and initiate authentication flows.
+
+### Getting Authorization Metadata
+
+The server exposes RFC 8414 compliant authorization metadata:
+
+```python
+from mcp_server.config import settings
+
+metadata = settings.get_authorization_metadata()
+# Returns: issuer, authorization_endpoint, token_endpoint,
+#          scopes_supported, grant_types_supported, etc.
+```
+
+### For Developers
+
+📖 **Complete Authorization Guide**: See [docs/AUTHORIZATION_GUIDE.md](docs/AUTHORIZATION_GUIDE.md) for:
+- Detailed authorization flow diagrams
+- Step-by-step OAuth implementation
+- Client integration examples
+- Troubleshooting common issues
+- Security best practices
+
+**Quick Links:**
+- [Authorization Guide](docs/AUTHORIZATION_GUIDE.md) - Complete developer guide
+- [GitHub OAuth Setup](docs/setup-auth-github.md) - OAuth app configuration
+- [Technical Analysis](docs/MCP_AUTHORIZATION_ANALYSIS.md) - Deep dive into implementation
+
 ## Security Considerations
 
-- **OAuth 2.1 with PKCE**: Prevents authorization code interception attacks
+- **OAuth 2.1 with PKCE**: Prevents authorization code interception attacks (RFC 7636)
+- **Resource Indicators (RFC 8707)**: Tokens are scoped to specific resources, preventing token misuse
+- **Authorization Metadata (RFC 8414)**: Clients can discover OAuth endpoints securely
+- **Structured Error Responses**: OAuth errors follow MCP spec with machine-readable metadata
 - **No Hardcoded Secrets**: All credentials managed via environment variables
 - **Non-root Docker User**: Containers run as non-privileged user
 - **Token Management**: Secure storage and automatic refresh of access tokens
 - **Minimal Dependencies**: Reduces attack surface
 - **HTTPS Only**: All external communication uses secure protocols
+
+📖 **Security Best Practices**: See the [Authorization Guide](docs/AUTHORIZATION_GUIDE.md#security-best-practices) for detailed security recommendations.
 
 ## Troubleshooting
 
@@ -396,6 +465,13 @@ If you encounter OAuth authentication errors:
 2. **Check Callback URL**: The callback URL in your OAuth app must match
 3. **Inspect Scopes**: Verify required OAuth scopes are configured
 4. **Token Expiry**: Tokens expire; use the refresh flow to get new tokens
+5. **Authorization Metadata**: Check server logs for OAuth configuration on startup
+
+📖 **Detailed Troubleshooting**: See [Authorization Guide - Troubleshooting](docs/AUTHORIZATION_GUIDE.md#troubleshooting) for:
+- Error code explanations
+- Step-by-step resolution guides
+- Common configuration issues
+- PKCE troubleshooting
 
 ### Server Connection Issues
 

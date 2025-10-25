@@ -24,6 +24,18 @@ async def run_server() -> None:
     if settings.is_oauth_configured():
         logger.info("OAuth is configured")
         logger.info(f"OAuth scopes: {', '.join(settings.oauth_scopes_list)}")
+
+        # Log authorization metadata for debugging
+        auth_metadata = settings.get_authorization_metadata()
+        logger.info(f"OAuth Issuer: {auth_metadata['issuer']}")
+        logger.info(f"Authorization Endpoint: {auth_metadata['authorization_endpoint']}")
+        logger.info(f"Token Endpoint: {auth_metadata['token_endpoint']}")
+        logger.info(
+            f"Supported Grant Types: {', '.join(auth_metadata['grant_types_supported'])}"
+        )
+        logger.info(
+            f"PKCE Methods: {', '.join(auth_metadata['code_challenge_methods_supported'])}"
+        )
     else:
         logger.warning(
             "OAuth is not configured. Please set OAUTH_CLIENT_ID and "

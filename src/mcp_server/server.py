@@ -187,21 +187,28 @@ Format your response in a clear, readable markdown format."""
 
         # Check if authenticated
         if not oauth_handler.is_authenticated():
-            auth_url, state, code_verifier = oauth_handler.get_authorization_url()
+            # Get structured authorization error response
+            auth_error = oauth_handler.get_authorization_error_response()
+
+            # Format as JSON for client consumption
+            error_message = json.dumps(auth_error, indent=2)
+
+            # Add user-friendly instructions
             instructions = f"""OAuth authentication required.
 
-Please complete the following steps:
-1. Open this URL in your browser: {auth_url}
-2. Authorize the application
-3. You will be redirected to a callback URL
-4. Copy the 'code' parameter from the callback URL
-5. Use the code to exchange for an access token
+Authorization Error Details:
+{error_message}
 
-Note: This is a demonstration flow. In production, implement a proper OAuth callback handler.
-Code verifier for PKCE (save this): {code_verifier}
-State (for verification): {state}"""
+To authenticate:
+1. Use the authorization_url from the error data above
+2. Complete the OAuth flow with PKCE (code_challenge_method: S256)
+3. Exchange the authorization code for an access token at token_url
+4. Include the resource parameter: {oauth_handler.get_resource_uri()}
 
-            logger.warning("User not authenticated, providing OAuth instructions")
+Note: This structured error response enables MCP clients to automate the OAuth flow.
+For manual testing, you can still use the authorization_url directly."""
+
+            logger.warning("User not authenticated, providing structured OAuth error response")
             return [TextContent(type="text", text=instructions)]
 
         try:

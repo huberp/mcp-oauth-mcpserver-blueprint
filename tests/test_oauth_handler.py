@@ -146,3 +146,57 @@ def test_is_authenticated_true(oauth_handler: OAuthHandler) -> None:
 def test_is_authenticated_false(oauth_handler: OAuthHandler) -> None:
     """Test authentication check returns False when not authenticated."""
     assert oauth_handler.is_authenticated() is False
+
+
+def test_get_authorization_error_response(oauth_handler: OAuthHandler) -> None:
+    """Test authorization error response generation."""
+    error_response = oauth_handler.get_authorization_error_response()
+
+    # Check error structure
+    assert "code" in error_response
+    assert "message" in error_response
+    assert "data" in error_response
+
+    # Check error code and message
+    assert error_response["code"] == -32001
+    assert "Authentication required" in error_response["message"]
+
+    # Check data contains OAuth metadata
+    data = error_response["data"]
+    assert data["type"] == "oauth2"
+    assert data["grant_type"] == "authorization_code"
+    assert data["code_challenge_method"] == "S256"
+
+    # Check OAuth endpoints are included
+    assert "authorization_url" in data
+    assert "token_url" in data
+    assert "test.example.com/oauth/authorize" in data["authorization_url"]
+    assert "test.example.com/oauth/token" in data["token_url"]
+
+    # Check scopes are included
+    assert "scopes" in data
+    assert isinstance(data["scopes"], list)
+
+    # Check resource indicator is included
+    assert "resource" in data
+    assert data["resource"] == "https://api.github.com"
+
+
+def test_get_authorization_error_response_structure() -> None:
+    """Test authorization error response has correct JSON-RPC error structure."""
+    handler = OAuthHandler()
+    error_response = handler.get_authorization_error_response()
+
+    # Verify it follows JSON-RPC error structure
+    assert isinstance(error_response["code"], int)
+    assert isinstance(error_response["message"], str)
+    assert isinstance(error_response["data"], dict)
+
+    # Verify data is machine-readable
+    data = error_response["data"]
+    assert all(isinstance(k, str) for k in data.keys())
+
+    # Verify all required OAuth info is present for client automation
+    required_fields = ["type", "grant_type", "authorization_url", "token_url", "scopes"]
+    for field in required_fields:
+        assert field in data, f"Missing required field: {field}"

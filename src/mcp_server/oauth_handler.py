@@ -175,3 +175,28 @@ class OAuthHandler:
             The resource URI that tokens are scoped to
         """
         return self.resource_uri
+
+    def get_authorization_error_response(self) -> dict[str, Any]:
+        """
+        Generate standardized authorization error response for MCP clients.
+
+        Returns a structured error response that clients can use to automatically
+        discover and initiate OAuth flows. This follows MCP spec guidance for
+        stdio transport where WWW-Authenticate headers aren't available.
+
+        Returns:
+            Dictionary containing error code, message, and OAuth metadata
+        """
+        return {
+            "code": -32001,  # Custom error code for authentication required
+            "message": "Authentication required",
+            "data": {
+                "type": "oauth2",
+                "grant_type": "authorization_code",
+                "authorization_url": self.authorization_url,
+                "token_url": self.token_url,
+                "scopes": self.scopes,
+                "code_challenge_method": "S256",
+                "resource": self.resource_uri,
+            },
+        }
