@@ -36,17 +36,111 @@ jobs:
       id: list-tools
       run: |
         cd src
-        npx --yes @modelcontextprotocol/inspector --cli --method tools/list python3 -m mcp_server.main > /tmp/tools.json 2>&1
+        # Run inspector with debug wrapper
+        npx --yes @modelcontextprotocol/inspector --cli --method tools/list ../.github/workflows/scripts/mcp-debug-wrapper.sh /tmp/tools-debug.log > /tmp/tools.json 2>&1
         echo "Tools output:"
         cat /tmp/tools.json
+        echo ""
+        echo "Debug output (first 50 lines):"
+        head -50 /tmp/tools-debug.log
 
     - name: Test MCP Server - List Prompts
       id: list-prompts
       run: |
         cd src
-        npx --yes @modelcontextprotocol/inspector --cli --method prompts/list python3 -m mcp_server.main > /tmp/prompts.json 2>&1
+        # Run inspector with debug wrapper
+        npx --yes @modelcontextprotocol/inspector --cli --method prompts/list ../.github/workflows/scripts/mcp-debug-wrapper.sh /tmp/prompts-debug.log > /tmp/prompts.json 2>&1
         echo "Prompts output:"
         cat /tmp/prompts.json
+        echo ""
+        echo "Debug output (first 50 lines):"
+        head -50 /tmp/prompts-debug.log
+
+    - name: Create Debug Log Report
+      if: always()
+      run: |
+        cat > /tmp/mcp-debug-logs.md << 'EOFMARKER'
+        # MCP Server Debug Logs
+        
+        This report contains the debug output from MCP Inspector test runs.
+        
+        **Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+        
+        ---
+        
+        ## Test: List Tools
+        
+        ### Response (JSON)
+        
+        ```json
+        EOFMARKER
+        
+        if [ -f /tmp/tools.json ]; then
+          cat /tmp/tools.json >> /tmp/mcp-debug-logs.md
+        else
+          echo "Error: tools.json not found" >> /tmp/mcp-debug-logs.md
+        fi
+        
+        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
+        ```
+        
+        ### Debug Output (stderr)
+        
+        ```
+        EOFMARKER
+        
+        if [ -f /tmp/tools-debug.log ]; then
+          cat /tmp/tools-debug.log >> /tmp/mcp-debug-logs.md
+        else
+          echo "Error: tools-debug.log not found" >> /tmp/mcp-debug-logs.md
+        fi
+        
+        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
+        ```
+        
+        ---
+        
+        ## Test: List Prompts
+        
+        ### Response (JSON)
+        
+        ```json
+        EOFMARKER
+        
+        if [ -f /tmp/prompts.json ]; then
+          cat /tmp/prompts.json >> /tmp/mcp-debug-logs.md
+        else
+          echo "Error: prompts.json not found" >> /tmp/mcp-debug-logs.md
+        fi
+        
+        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
+        ```
+        
+        ### Debug Output (stderr)
+        
+        ```
+        EOFMARKER
+        
+        if [ -f /tmp/prompts-debug.log ]; then
+          cat /tmp/prompts-debug.log >> /tmp/mcp-debug-logs.md
+        else
+          echo "Error: prompts-debug.log not found" >> /tmp/mcp-debug-logs.md
+        fi
+        
+        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
+        ```
+        
+        ---
+        
+        ## Summary
+        
+        - Tools test: ${{ steps.list-tools.outcome }}
+        - Prompts test: ${{ steps.list-prompts.outcome }}
+        
+        EOFMARKER
+        
+        echo "Debug log report created at /tmp/mcp-debug-logs.md"
+        echo "Size: $(wc -l /tmp/mcp-debug-logs.md | awk '{print $1}') lines"
 
     - name: Generate Summary Report
       if: always()
@@ -155,4 +249,7 @@ jobs:
         path: |
           /tmp/tools.json
           /tmp/prompts.json
+          /tmp/tools-debug.log
+          /tmp/prompts-debug.log
+          /tmp/mcp-debug-logs.md
         retention-days: 30
