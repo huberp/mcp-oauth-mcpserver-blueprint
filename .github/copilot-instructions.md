@@ -127,12 +127,19 @@ npx @modelcontextprotocol/inspector --cli --method resources/list python3 -m mcp
 
 ## MCP Protocol Implementation
 
+### Protocol Compliance
+- **CRITICAL**: This project MUST comply with MCP Specification 2025-06-18 (LATEST)
+- **Protocol Version**: Always use `2025-06-18` - this is the current latest specification
+- **Specification URL**: https://modelcontextprotocol.io/specification/2025-06-18
+- **Never use outdated protocol versions** like 2025-03-26 or earlier
+- All code, documentation, and references must use the 2025-06-18 specification
+
 ### Server Structure
 - Use FastMCP for high-level abstractions
 - Register all prompts and tools properly
 - Implement proper error handling in tools
 - Provide clear descriptions for prompts/tools
-- Follow MCP specification 2025-03-26
+- Follow MCP specification 2025-06-18 (LATEST)
 
 ### Prompts
 - Provide clear, actionable prompt templates

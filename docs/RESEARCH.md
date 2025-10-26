@@ -6,6 +6,8 @@ This document provides comprehensive research on implementing a Model Context Pr
 
 **Note**: This implementation is updated to comply with MCP Specification 2025-06-18. See [SPEC_UPDATE_2025-06-18.md](SPEC_UPDATE_2025-06-18.md) for detailed changes from the previous 2025-03-26 version.
 
+The latest specification is available at: https://modelcontextprotocol.io/specification/2025-06-18
+
 ## 1. Model Context Protocol (MCP) Specification 2025-06-18
 
 ### Overview
@@ -63,7 +65,7 @@ MCP clients must implement RFC 8707 Resource Indicators to:
 - Include `resource` parameter in OAuth token requests
 
 #### Reference Links
-- **OAuth Specification**: https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization
+- **OAuth Specification**: https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization
 - **Authorization Guide**: https://modelcontextprotocol.info/specification/draft/basic/authorization/
 - **OAuth Implementation**: https://mdming.wordpress.com/2025/06/30/implementing-oauth-with-an-mcp-model-context-protocol-ai-test-server-a-technical-deep-dive/
 
@@ -363,8 +365,8 @@ Based on the research, here are the recommended implementation options, ranked b
 All links in this document have been validated and are accessible:
 
 ### Specification Links ✓
-- https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization ✓
-- https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/basic/authorization.mdx ✓
+- https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization ✓
+- https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-06-18/basic/authorization.mdx ✓
 - https://modelcontextprotocol.io/docs/sdk ✓
 
 ### Library Links ✓
