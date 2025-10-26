@@ -35,7 +35,23 @@ code-reviews/
 
 ### Using Helper Scripts
 
-The `create-review-issues.sh` script can be used to automate GitHub issue creation:
+#### GitHub Actions Workflow (Recommended)
+
+The easiest way to create issues is using the GitHub Actions workflow:
+
+1. Go to **Actions** → **Create Code Review Issues**
+2. Click **Run workflow**
+3. Configure options:
+   - **dry_run**: `true` to preview, `false` to create issues
+   - **start_issue**: First issue number to create (1-24)
+   - **end_issue**: Last issue number to create (1-24)
+4. Click **Run workflow**
+
+The workflow will parse the CODE_REVIEW_ISSUES.md file and create GitHub issues automatically with proper labels and formatting.
+
+#### Manual Script
+
+Alternatively, the `create-review-issues.sh` script template is available for manual use:
 
 ```bash
 cd code-reviews
