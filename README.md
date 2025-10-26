@@ -132,6 +132,12 @@ OAUTH_SCOPES=read:user,repo
 
 ### 5. Run the Server
 
+The server can be run in two modes:
+
+**Background Mode (recommended for development):**
+
+Starts the server in the background and writes a PID file for easy management.
+
 **Linux/macOS:**
 ```bash
 ./scripts/run.sh
@@ -141,6 +147,37 @@ OAUTH_SCOPES=read:user,repo
 ```powershell
 .\scripts\run.ps1
 ```
+
+**Foreground Mode (for debugging):**
+
+Runs the server in the current terminal window. Press Ctrl+C to stop.
+
+**Linux/macOS:**
+```bash
+./scripts/run.sh --foreground
+```
+
+**Windows:**
+```powershell
+.\scripts\run.ps1 -Foreground
+```
+
+**Stopping the Background Server:**
+
+**Linux/macOS:**
+```bash
+./scripts/stop.sh
+```
+
+**Windows:**
+```powershell
+.\scripts\stop.ps1
+```
+
+The server will be available at:
+- MCP endpoint: `http://localhost:8000/mcp`
+- OAuth authorization: `http://localhost:8000/oauth/authorize`
+- Health check: `http://localhost:8000/health`
 
 ## Docker Deployment
 
@@ -280,15 +317,53 @@ The `mcp-tester.yml` workflow:
 
 **View test results:** Check the workflow summary in GitHub Actions to see a table of all prompts and tools reported by the MCP server.
 
-**Manual testing:** You can also test the server locally using the MCP Inspector:
+**Manual testing with MCP Inspector:**
 
+The server now uses HTTP transport, so you need to start the server first before testing with the inspector.
+
+**Option 1: Quick Start (Automatic Server Start)**
+
+**Linux/macOS:**
 ```bash
-# Install and test tools
-npx @modelcontextprotocol/inspector --cli --method tools/list python3 -m mcp_server.main
-
-# Install and test prompts
-npx @modelcontextprotocol/inspector --cli --method prompts/list python3 -m mcp_server.main
+./runlocal/run-inspector.sh --start-server
 ```
+
+**Windows:**
+```powershell
+.\runlocal\run-inspector.ps1 -StartServer
+```
+
+**Option 2: Manual Server Management**
+
+**Linux/macOS:**
+```bash
+# 1. Start the server in background
+./scripts/run.sh
+
+# 2. Run the inspector (configured for HTTP transport)
+./runlocal/run-inspector.sh
+
+# 3. Stop the server when done
+./scripts/stop.sh
+```
+
+**Windows:**
+```powershell
+# 1. Start the server in background
+.\scripts\run.ps1
+
+# 2. Run the inspector (configured for HTTP transport)
+.\runlocal\run-inspector.ps1
+
+# 3. Stop the server when done
+.\scripts\stop.ps1
+```
+
+**Configuration Files:**
+- `runlocal/config.json` - MCP Inspector configuration (HTTP transport)
+- `.vscode/mcp.json` - VS Code MCP client configuration (HTTP transport)
+
+Both configurations connect to `http://localhost:8000/mcp` by default.
 
 ## Development
 
