@@ -22,4 +22,4 @@ set -a
 set +a
 
 echo "Starting MCP Inspector (UI) with config: runlocal/config.json"
-npx @modelcontextprotocol/inspector --config runlocal/config.json --server local-server
+mcp-inspector --config runlocal/config.json --server local-server

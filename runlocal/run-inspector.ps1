@@ -35,8 +35,11 @@ Get-Content .env.local | ForEach-Object {
     }
 }
 
-$cmd = 'npx @modelcontextprotocol/inspector --config runlocal/config.json --server local-server'
-if ($CliMode) { $cmd += ' --cli --method tools/list' }
+$cmd = 'mcp-inspector --env DEBUG=true --env LOG_LEVEL=verbose --config runlocal/config.json --server local-server'
+if ($CliMode) { 
+    #$cmd += ' --cli --method tools/list' 
+    $cmd += ' --cli --method tools/call --tool-name get_github_user_info'
+}
 
 Write-Host "Starting MCP Inspector with config: runlocal/config.json"
 Invoke-Expression $cmd
