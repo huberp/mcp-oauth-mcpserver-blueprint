@@ -76,6 +76,7 @@ temp/
 *.tmp
 *.pid
 .mcp-server.pid
+.do.not.check.in
 
 # OS
 Thumbs.db
