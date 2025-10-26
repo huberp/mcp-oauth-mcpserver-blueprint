@@ -23,13 +23,19 @@ services:
       SERVER_VERSION: ${SERVER_VERSION:-0.1.0}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       
+      # HTTP Server Configuration
+      SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
+      SERVER_PORT: ${SERVER_PORT:-8000}
+      SERVER_PATH: ${SERVER_PATH:-/mcp}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:8000/oauth/callback}
+      
       # Development Settings
       ENVIRONMENT: ${ENVIRONMENT:-production}
       DEBUG: ${DEBUG:-false}
     
-    # Use stdin/stdout for MCP protocol
-    stdin_open: true
-    tty: true
+    # Expose HTTP port
+    ports:
+      - "8000:8000"
     
     # Restart policy
     restart: unless-stopped

@@ -30,11 +30,10 @@ async def test_server_creation_with_sampling() -> None:
     assert server is not None
 
     # The server should have registered handlers
-    # We can't directly test them without a full MCP session setup,
-    # but we can verify the server object exists and has the right type
-    from mcp.server import Server
+    # With FastMCP, we verify it's a FastMCP instance instead of Server
+    from fastmcp import FastMCP
 
-    assert isinstance(server, Server)
+    assert isinstance(server, FastMCP)
 
 
 @pytest.mark.asyncio
