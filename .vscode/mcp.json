@@ -1,12 +1,12 @@
 {
   "mcpServers": {
-    "local-server": {
+    "mcp-oauth-server": {
       "type": "http",
       "url": "http://localhost:8000/mcp",
       "env": {
         "SERVER_NAME": "mcp-oauth-server",
-        "SETTINGS_FILE": ".env.local",
-        "DEBUG": "true"
+        "DEBUG": "true",
+        "LOG_LEVEL": "INFO"
       }
     }
   }
