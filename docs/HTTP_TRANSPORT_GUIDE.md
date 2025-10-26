@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the migration from stdio transport to HTTP (Streamable HTTP/SSE) transport in the MCP OAuth Server.
+This document describes the migration from stdio transport to HTTP transport using Streamable HTTP with Server-Sent Events (SSE) in the MCP OAuth Server per MCP Specification 2025-06-18.
 
 ## What Changed
 
@@ -151,38 +151,67 @@ For MCP hosts that support HTTP transport:
 
 ## Session Management
 
+⚠️ **SECURITY WARNING**: The current implementation uses in-memory session storage which has significant security implications:
+
 The server uses in-memory session storage for OAuth flow:
 
 - **Storage**: In-memory dictionary (not persisted across restarts)
 - **Expiry**: OAuth sessions expire after 10 minutes
 - **Cleanup**: Automatic cleanup of expired sessions
-- **Production**: For production use, consider:
-  - Redis for distributed session storage
-  - Database for persistent storage
-  - Encrypted cookies for stateless sessions
+- **⚠️ Security Risks**:
+  - NOT suitable for production multi-instance deployments
+  - Sessions lost on server restart
+  - Potential for session fixation attacks
+  - Risk of session hijacking in shared environments
+  - No protection against concurrent access
+- **Production**: For production use, you MUST implement:
+  - Redis or similar for distributed session storage
+  - Database-backed persistent storage with encryption
+  - Secure, encrypted cookies for stateless sessions
+  - Session invalidation mechanisms
+  - Regular session rotation
 
 ## Security Considerations
+
+### ⚠️ CRITICAL: HTTP vs HTTPS
+
+**DO NOT USE IN PRODUCTION WITH HTTP ONLY**
+
+The default configuration uses unencrypted HTTP which exposes severe security vulnerabilities:
+
+- **🚨 OAuth Tokens Exposed**: Access tokens transmitted in cleartext over the network
+- **🚨 Man-in-the-Middle Attacks**: Attackers can intercept OAuth flows and steal tokens
+- **🚨 Session Hijacking**: Session cookies and state parameters can be captured
+- **🚨 Authorization Code Interception**: PKCE protection bypassed if authorization code is intercepted
 
 ### OAuth Security
 - ✅ PKCE (RFC 7636) implemented for all flows
 - ✅ State parameter validated for CSRF protection
 - ✅ Resource Indicators (RFC 8707) for token scoping
 - ✅ Sessions expire automatically
+- ⚠️ **CRITICAL**: All OAuth security is undermined without HTTPS/TLS
 
 ### HTTP Security
-- ⚠️ Default configuration uses HTTP (not HTTPS)
-- 🔒 For production:
-  - Use HTTPS with valid SSL certificates
+- ⚠️ **DEFAULT CONFIGURATION IS NOT SECURE FOR PRODUCTION**
+- ⚠️ HTTP only (unencrypted) - tokens visible in network traffic
+- ⚠️ No request authentication - anyone can access endpoints
+- 🔒 **REQUIRED for production**:
+  - **HTTPS with valid SSL/TLS certificates** (minimum TLS 1.2)
   - Configure proper CORS headers
   - Implement rate limiting
-  - Add request authentication
+  - Add request authentication/authorization
+  - Use a reverse proxy (nginx, Apache) with security headers
+  - Implement Web Application Firewall (WAF)
 
 ### Session Storage
-- ⚠️ In-memory storage not suitable for multiple instances
-- 🔒 For production:
+- ⚠️ In-memory storage NOT suitable for production
+- ⚠️ Vulnerable to session fixation and hijacking
+- 🔒 **REQUIRED for production**:
   - Use Redis or similar for distributed sessions
-  - Encrypt session data
-  - Implement session invalidation
+  - Encrypt session data at rest and in transit
+  - Implement session invalidation on logout
+  - Regular session rotation
+  - Secure session ID generation
 
 ## Migration Checklist
 
