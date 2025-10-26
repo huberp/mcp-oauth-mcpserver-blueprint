@@ -56,9 +56,12 @@ USER mcpuser
 # Set Python to run in unbuffered mode
 ENV PYTHONUNBUFFERED=1
 
-# Health check (for container orchestration)
+# Health check (for HTTP server)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import sys; sys.exit(0)"
+    CMD python -c "import httpx; httpx.get('http://localhost:8000/health', timeout=5)" || exit 1
+
+# Expose HTTP port
+EXPOSE 8000
 
 # Set default command
 CMD ["python", "-m", "mcp_server.main"]
