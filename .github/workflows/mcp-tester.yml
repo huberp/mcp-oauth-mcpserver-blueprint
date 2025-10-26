@@ -30,117 +30,89 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install fastmcp authlib httpx python-dotenv pydantic pydantic-settings
+        pip install -e .
+
+    - name: Create test environment file
+      run: |
+        cat > .env << 'EOF'
+        OAUTH_CLIENT_ID=test_client_id
+        OAUTH_CLIENT_SECRET=test_client_secret
+        SERVER_HOST=127.0.0.1
+        SERVER_PORT=8000
+        LOG_LEVEL=DEBUG
+        EOF
+
+    - name: Start MCP Server in background
+      run: |
+        # Start server in background
+        nohup python3 -m mcp_server.main > /tmp/server.log 2>&1 &
+        SERVER_PID=$!
+        echo $SERVER_PID > /tmp/server.pid
+        echo "Server started with PID: $SERVER_PID"
+        
+        # Wait for server to be ready (max 30 seconds)
+        echo "Waiting for server to be ready..."
+        for i in {1..30}; do
+          if curl -sf http://127.0.0.1:8000/health > /dev/null 2>&1; then
+            echo "Server is ready!"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "Server failed to start within 30 seconds"
+            echo "Server logs:"
+            cat /tmp/server.log
+            exit 1
+          fi
+          sleep 1
+        done
 
     - name: Test MCP Server - List Tools
       id: list-tools
       run: |
-        cd src
-        # Run inspector with debug wrapper
-        npx --yes @modelcontextprotocol/inspector --cli --method tools/list ../.github/workflows/scripts/mcp-debug-wrapper.sh /tmp/tools-debug.log > /tmp/tools.json 2>&1
+        echo "Testing tools/list endpoint..."
+        npx --yes @modelcontextprotocol/inspector \
+          --cli \
+          --method tools/list \
+          --transport http \
+          --url http://127.0.0.1:8000/mcp \
+          > /tmp/tools.json 2>&1 || true
+        
         echo "Tools output:"
         cat /tmp/tools.json
-        echo ""
-        echo "Debug output (first 50 lines):"
-        head -50 /tmp/tools-debug.log
 
     - name: Test MCP Server - List Prompts
       id: list-prompts
       run: |
-        cd src
-        # Run inspector with debug wrapper
-        npx --yes @modelcontextprotocol/inspector --cli --method prompts/list ../.github/workflows/scripts/mcp-debug-wrapper.sh /tmp/prompts-debug.log > /tmp/prompts.json 2>&1
+        echo "Testing prompts/list endpoint..."
+        npx --yes @modelcontextprotocol/inspector \
+          --cli \
+          --method prompts/list \
+          --transport http \
+          --url http://127.0.0.1:8000/mcp \
+          > /tmp/prompts.json 2>&1 || true
+        
         echo "Prompts output:"
         cat /tmp/prompts.json
-        echo ""
-        echo "Debug output (first 50 lines):"
-        head -50 /tmp/prompts-debug.log
 
-    - name: Create Debug Log Report
+    - name: Stop MCP Server
       if: always()
       run: |
-        cat > /tmp/mcp-debug-logs.md << 'EOFMARKER'
-        # MCP Server Debug Logs
-        
-        This report contains the debug output from MCP Inspector test runs.
-        
-        **Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-        
-        ---
-        
-        ## Test: List Tools
-        
-        ### Response (JSON)
-        
-        ```json
-        EOFMARKER
-        
-        if [ -f /tmp/tools.json ]; then
-          cat /tmp/tools.json >> /tmp/mcp-debug-logs.md
-        else
-          echo "Error: tools.json not found" >> /tmp/mcp-debug-logs.md
+        if [ -f /tmp/server.pid ]; then
+          SERVER_PID=$(cat /tmp/server.pid)
+          echo "Stopping server (PID: $SERVER_PID)..."
+          kill $SERVER_PID 2>/dev/null || true
+          sleep 2
+          # Force kill if still running
+          kill -9 $SERVER_PID 2>/dev/null || true
+          rm -f /tmp/server.pid
         fi
         
-        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
-        ```
-        
-        ### Debug Output (stderr)
-        
-        ```
-        EOFMARKER
-        
-        if [ -f /tmp/tools-debug.log ]; then
-          cat /tmp/tools-debug.log >> /tmp/mcp-debug-logs.md
-        else
-          echo "Error: tools-debug.log not found" >> /tmp/mcp-debug-logs.md
+        # Show server logs
+        if [ -f /tmp/server.log ]; then
+          echo ""
+          echo "=== Server Logs ==="
+          cat /tmp/server.log
         fi
-        
-        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
-        ```
-        
-        ---
-        
-        ## Test: List Prompts
-        
-        ### Response (JSON)
-        
-        ```json
-        EOFMARKER
-        
-        if [ -f /tmp/prompts.json ]; then
-          cat /tmp/prompts.json >> /tmp/mcp-debug-logs.md
-        else
-          echo "Error: prompts.json not found" >> /tmp/mcp-debug-logs.md
-        fi
-        
-        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
-        ```
-        
-        ### Debug Output (stderr)
-        
-        ```
-        EOFMARKER
-        
-        if [ -f /tmp/prompts-debug.log ]; then
-          cat /tmp/prompts-debug.log >> /tmp/mcp-debug-logs.md
-        else
-          echo "Error: prompts-debug.log not found" >> /tmp/mcp-debug-logs.md
-        fi
-        
-        cat >> /tmp/mcp-debug-logs.md << 'EOFMARKER'
-        ```
-        
-        ---
-        
-        ## Summary
-        
-        - Tools test: ${{ steps.list-tools.outcome }}
-        - Prompts test: ${{ steps.list-prompts.outcome }}
-        
-        EOFMARKER
-        
-        echo "Debug log report created at /tmp/mcp-debug-logs.md"
-        echo "Size: $(wc -l /tmp/mcp-debug-logs.md | awk '{print $1}') lines"
 
     - name: Generate Summary Report
       if: always()
@@ -161,7 +133,15 @@ jobs:
         
         try:
             with open('/tmp/tools.json', 'r') as f:
-                data = json.load(f)
+                content = f.read()
+                # Try to extract JSON from output
+                import re
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    data = json.loads(json_match.group())
+                else:
+                    data = json.loads(content)
+                
                 tools = data.get('tools', [])
                 
                 for tool in tools:
@@ -207,7 +187,15 @@ jobs:
         
         try:
             with open('/tmp/prompts.json', 'r') as f:
-                data = json.load(f)
+                content = f.read()
+                # Try to extract JSON from output
+                import re
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    data = json.loads(json_match.group())
+                else:
+                    data = json.loads(content)
+                
                 prompts = data.get('prompts', [])
                 
                 for prompt in prompts:
@@ -249,7 +237,5 @@ jobs:
         path: |
           /tmp/tools.json
           /tmp/prompts.json
-          /tmp/tools-debug.log
-          /tmp/prompts-debug.log
-          /tmp/mcp-debug-logs.md
+          /tmp/server.log
         retention-days: 30
