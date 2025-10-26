@@ -51,12 +51,13 @@ class OAuthHandler:
         code_challenge = create_s256_code_challenge(code_verifier)
         return code_verifier, code_challenge
 
-    def get_authorization_url(self, state: str | None = None) -> tuple[str, str, str]:
+    def get_authorization_url(self, state: str | None = None, redirect_uri: str | None = None) -> tuple[str, str, str]:
         """
         Generate OAuth authorization URL with PKCE.
 
         Args:
             state: Optional state parameter for CSRF protection
+            redirect_uri: Optional redirect URI (defaults to configured redirect URI)
 
         Returns:
             Tuple of (authorization_url, state, code_verifier)
@@ -67,10 +68,14 @@ class OAuthHandler:
         code_verifier, code_challenge = self.generate_pkce_pair()
         self._code_verifier = code_verifier
 
+        # Use provided redirect_uri or default from settings
+        from .config import settings
+        redirect_uri = redirect_uri or settings.oauth_redirect_uri
+
         params = {
             "client_id": self.client_id,
             "response_type": "code",
-            "redirect_uri": "http://localhost:8080/callback",
+            "redirect_uri": redirect_uri,
             "scope": " ".join(self.scopes),
             "state": state,
             "code_challenge": code_challenge,

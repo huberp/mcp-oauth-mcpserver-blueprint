@@ -2,11 +2,13 @@
 
 import json
 import logging
+import secrets
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastmcp import FastMCP
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse, PlainTextResponse
+from starlette.responses import JSONResponse, RedirectResponse, PlainTextResponse, HTMLResponse
 
 from .api_client import APIClient
 from .config import settings
@@ -25,6 +27,22 @@ mcp = FastMCP(settings.server_name)
 # Initialize OAuth and API client (shared across requests)
 oauth_handler = OAuthHandler()
 api_client = APIClient(oauth_handler)
+
+# Simple in-memory session storage for OAuth state
+# In production, use Redis, database, or encrypted cookies
+oauth_sessions: dict[str, dict[str, Any]] = {}
+
+def cleanup_expired_sessions() -> None:
+    """Remove expired OAuth sessions."""
+    now = datetime.now()
+    expired = [
+        state for state, data in oauth_sessions.items()
+        if data.get("expires_at", now) < now
+    ]
+    for state in expired:
+        oauth_sessions.pop(state, None)
+    if expired:
+        logger.info(f"Cleaned up {len(expired)} expired OAuth sessions")
 
 
 @mcp.prompt()
@@ -248,30 +266,34 @@ async def oauth_authorize(request: Request) -> RedirectResponse:
     Initiates the OAuth authorization flow by redirecting to the GitHub OAuth page.
     """
     logger.info("Initiating OAuth authorization flow")
-    
-    # Get state parameter from query or generate new one
-    state = request.query_params.get("state")
+    cleanup_expired_sessions()
     
     # Generate authorization URL with PKCE
-    auth_url, state, code_verifier = oauth_handler.get_authorization_url(state=state)
+    auth_url, state, code_verifier = oauth_handler.get_authorization_url()
     
-    # In a real implementation, you would store state and code_verifier in session
-    # For now, we log them (NOT SECURE - just for demonstration)
-    logger.info(f"Authorization URL generated. State: {state}")
-    logger.warning("Code verifier should be stored securely - current implementation is for demo only")
+    # Store session data for callback
+    oauth_sessions[state] = {
+        "code_verifier": code_verifier,
+        "created_at": datetime.now(),
+        "expires_at": datetime.now() + timedelta(minutes=10),  # 10 minute expiry
+    }
+    
+    logger.info(f"OAuth session created. State: {state}")
+    logger.info(f"Active OAuth sessions: {len(oauth_sessions)}")
     
     # Redirect to GitHub OAuth page
     return RedirectResponse(url=auth_url)
 
 
 @mcp.custom_route("/oauth/callback", methods=["GET"])
-async def oauth_callback(request: Request) -> PlainTextResponse:
+async def oauth_callback(request: Request) -> HTMLResponse:
     """
     OAuth callback endpoint.
     
     Handles the OAuth callback from GitHub and exchanges the authorization code for tokens.
     """
     logger.info("Received OAuth callback")
+    cleanup_expired_sessions()
     
     # Get authorization code and state from query parameters
     code = request.query_params.get("code")
@@ -280,37 +302,144 @@ async def oauth_callback(request: Request) -> PlainTextResponse:
     
     if error:
         logger.error(f"OAuth error: {error}")
-        return PlainTextResponse(
-            f"OAuth authorization failed: {error}",
-            status_code=400
+        error_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>OAuth Error</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }}
+                .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 4px; }}
+            </style>
+        </head>
+        <body>
+            <h1>OAuth Authorization Failed</h1>
+            <div class="error">
+                <strong>Error:</strong> {error}
+            </div>
+            <p>Please try again or contact support if the problem persists.</p>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=error_html, status_code=400)
+    
+    if not code or not state:
+        logger.error("Missing authorization code or state")
+        error_html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>OAuth Error</title>
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                .error { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 4px; }
+            </style>
+        </head>
+        <body>
+            <h1>OAuth Authorization Failed</h1>
+            <div class="error">
+                <strong>Error:</strong> Missing authorization code or state parameter
+            </div>
+            <p>The OAuth callback was incomplete. Please try again.</p>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=error_html, status_code=400)
+    
+    # Retrieve session data
+    session_data = oauth_sessions.pop(state, None)
+    
+    if not session_data:
+        logger.error(f"Invalid or expired state: {state}")
+        error_html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>OAuth Error</title>
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                .error { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 4px; }
+            </style>
+        </head>
+        <body>
+            <h1>OAuth Authorization Failed</h1>
+            <div class="error">
+                <strong>Error:</strong> Invalid or expired session
+            </div>
+            <p>Your OAuth session has expired or is invalid. Please start the authorization flow again.</p>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=error_html, status_code=400)
+    
+    code_verifier = session_data["code_verifier"]
+    
+    try:
+        # Exchange code for token
+        token = await oauth_handler.exchange_code_for_token(
+            code=code,
+            code_verifier=code_verifier,
+            redirect_uri=settings.oauth_redirect_uri
         )
-    
-    if not code:
-        logger.error("No authorization code received")
-        return PlainTextResponse(
-            "No authorization code received",
-            status_code=400
-        )
-    
-    # In a real implementation, you would retrieve the code_verifier from session
-    # For now, we need to get it somehow (this is a limitation of the simple implementation)
-    # This is NOT SECURE and should be fixed with proper session management
-    logger.warning("Code verifier retrieval needed - implement proper session management")
-    
-    return PlainTextResponse(
-        f"""OAuth callback received successfully!
-
-Code: {code}
-State: {state}
-
-To complete the flow, you need to:
-1. Store the code_verifier securely when initiating the flow
-2. Retrieve it here to exchange the code for tokens
-3. Call oauth_handler.exchange_code_for_token(code, code_verifier)
-
-This requires implementing proper session management, which is beyond
-the scope of this basic HTTP server implementation."""
-    )
+        
+        logger.info("Successfully exchanged authorization code for access token")
+        
+        # Success page
+        success_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>OAuth Success</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }}
+                .success {{ color: #2e7d32; background: #e8f5e9; padding: 20px; border-radius: 4px; }}
+                .info {{ background: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 4px; }}
+                code {{ background: #263238; color: #aed581; padding: 2px 6px; border-radius: 3px; }}
+            </style>
+        </head>
+        <body>
+            <h1>✓ OAuth Authorization Successful</h1>
+            <div class="success">
+                <strong>Success!</strong> You have been authenticated with GitHub.
+            </div>
+            <div class="info">
+                <p><strong>Token Information:</strong></p>
+                <ul>
+                    <li>Access Token: <code>***{oauth_handler.access_token[-8:] if oauth_handler.access_token else "N/A"}</code></li>
+                    <li>Token Type: <code>{token.get("token_type", "bearer")}</code></li>
+                    <li>Scopes: <code>{token.get("scope", "N/A")}</code></li>
+                </ul>
+            </div>
+            <p>You can now close this window and use the MCP server with authentication.</p>
+            <p>The server has stored your access token and will use it for GitHub API requests.</p>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=success_html, status_code=200)
+        
+    except Exception as e:
+        logger.error(f"Token exchange failed: {e}", exc_info=True)
+        error_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>OAuth Error</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }}
+                .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 4px; }}
+            </style>
+        </head>
+        <body>
+            <h1>OAuth Token Exchange Failed</h1>
+            <div class="error">
+                <strong>Error:</strong> {str(e)}
+            </div>
+            <p>Failed to exchange authorization code for access token.</p>
+            <p>Please try again or check your OAuth configuration.</p>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=error_html, status_code=500)
 
 
 @mcp.custom_route("/health", methods=["GET"])
