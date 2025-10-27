@@ -22,16 +22,6 @@
     "ruff.importStrategy": "fromEnvironment",
     "ruff.organizeImports": true,
 
-    "black-formatter.args": [
-        "--line-length=100"
-    ],
-
-    "python.linting.enabled": true,
-    "python.linting.mypyEnabled": true,
-    "python.linting.mypyArgs": [
-        "--config-file=${workspaceFolder}/pyproject.toml"
-    ],
-
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
     "python.testing.pytestArgs": [
