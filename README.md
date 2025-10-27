@@ -444,19 +444,60 @@ pytest -v
 
 ### Code Quality
 
+#### Automated Code Quality (Recommended)
+
+We use pre-commit hooks to automatically enforce code quality standards:
+
 ```bash
-# Linting
-ruff check src/ tests/
+# Install pre-commit (one-time setup)
+pip install pre-commit
+pre-commit install
+
+# Pre-commit will now run automatically on git commit
+# To manually run on all files:
+pre-commit run --all-files
+```
+
+The pre-commit hooks include:
+- **Ruff**: Linting and formatting (replaces Black + Flake8 + isort)
+- **mypy**: Type checking
+- **Standard checks**: Trailing whitespace, end-of-file, YAML/JSON/TOML validation
+- **Security**: Private key detection
+- **Docker**: Dockerfile linting
+- **Shell**: Shell script validation
+
+#### VS Code Integration
+
+For the best development experience in VS Code:
+
+1. **Install recommended extensions** (VS Code will prompt you):
+   - `charliermarsh.ruff` - Ruff linter and formatter
+   - `ms-python.python` - Python support
+   - Other helpful extensions listed in `.vscode/extensions.json`
+
+2. **Automatic formatting on save** is already configured in `.vscode/settings.json`
+
+3. **EditorConfig** support: Install the EditorConfig extension for consistent formatting across all editors
+
+#### Manual Code Quality Checks
+
+If you prefer not to use pre-commit hooks:
+
+```bash
+# Format code with Ruff
+ruff format src/ tests/
+
+# Lint and auto-fix with Ruff
+ruff check --fix src/ tests/
 
 # Type checking
 mypy src/
 
-# Format code
-black src/ tests/
-
 # Run all quality checks
 ./scripts/test.sh  # or test.ps1 on Windows
 ```
+
+**Note**: Ruff replaces Black, Flake8, isort, and other tools with a single, faster linter and formatter.
 
 ### Environment Variables
 
