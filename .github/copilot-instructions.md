@@ -29,6 +29,37 @@ This project is a Model Context Protocol (MCP) server with OAuth 2.1 authenticat
 - Provide clear, actionable error messages
 - Log errors with appropriate context
 - Never suppress exceptions without explicit reason
+- **ALWAYS use exception chaining**: Use `raise ... from err` or `raise ... from None`
+  ```python
+  # Good: Shows exception chain
+  try:
+      result = api_call()
+  except Exception as e:
+      raise ValueError(f"API call failed: {e}") from e
+  
+  # Bad: Hides the original exception
+  try:
+      result = api_call()
+  except Exception as e:
+      raise ValueError(f"API call failed: {e}")
+  ```
+
+### Code Quality Rules (Ruff)
+The project uses Ruff for linting with the following enabled rules:
+- **E/W**: pycodestyle errors and warnings (PEP 8 compliance)
+- **F**: pyflakes (detect unused imports, undefined names, etc.)
+- **I**: isort (import sorting)
+- **B**: flake8-bugbear (common bugs and design problems)
+- **C4**: flake8-comprehensions (better list/dict/set comprehensions)
+- **UP**: pyupgrade (modern Python syntax)
+
+Common violations to avoid:
+- **No trailing whitespace** (W291)
+- **No whitespace in blank lines** (W293)
+- **Keep imports sorted** (I001) - stdlib, third-party, first-party
+- **Remove unused imports** (F401)
+- **Use exception chaining** (B904) - Always use `from e` or `from None`
+- **Line length**: Maximum 100 characters (enforced by Black and Ruff)
 
 ## Testing Requirements
 
@@ -155,12 +186,44 @@ npx @modelcontextprotocol/inspector --cli --method resources/list python3 -m mcp
 
 ## Development Workflow
 
-### Before Committing
-1. Run linters: `ruff check src/ tests/`
-2. Run type checker: `mypy src/`
-3. Run tests: `pytest`
-4. Ensure 100% test pass rate
-5. Check coverage is maintained
+### Code Quality Tools
+
+#### Pre-commit Hooks (Recommended)
+We use pre-commit hooks to automatically check code quality before commits:
+
+```bash
+# Install pre-commit hooks (one-time setup)
+pip install pre-commit
+pre-commit install
+
+# Manually run on all files
+pre-commit run --all-files
+```
+
+The pre-commit configuration includes:
+- **Ruff**: Automatic linting and formatting
+- **mypy**: Type checking
+- **Trailing whitespace removal**
+- **End-of-file fixes**
+- **YAML/JSON/TOML validation**
+- **Dockerfile linting**
+- **Shell script validation**
+
+#### VS Code Integration
+For VS Code users, install the recommended extensions:
+- **charliermarsh.ruff** - Ruff linter and formatter
+- **ms-python.python** - Python support
+- The `.vscode/settings.json` file is already configured for automatic formatting on save
+
+#### Manual Checks
+If not using pre-commit hooks, run these before committing:
+
+1. **Format code**: `ruff format src/ tests/`
+2. **Run linters**: `ruff check --fix src/ tests/`
+3. **Run type checker**: `mypy src/`
+4. **Run tests**: `pytest`
+5. **Ensure 100% test pass rate**
+6. **Check coverage is maintained**
 
 ### Adding New Features
 1. Write tests first (TDD)

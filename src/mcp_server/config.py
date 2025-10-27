@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     server_name: str = "mcp-oauth-server"
     server_version: str = "0.1.0"
     log_level: str = "INFO"
-    
+
     # HTTP Server Configuration
     server_host: str = "0.0.0.0"
     server_port: int = 8000

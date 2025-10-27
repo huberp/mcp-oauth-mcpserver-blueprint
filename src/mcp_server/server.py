@@ -2,13 +2,12 @@
 
 import json
 import logging
-import secrets
 from datetime import datetime, timedelta
 from typing import Any
 
 from fastmcp import FastMCP
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse, PlainTextResponse, HTMLResponse
+from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 
 from .api_client import APIClient
 from .config import settings
@@ -49,10 +48,10 @@ def cleanup_expired_sessions() -> None:
 async def github_user_summary(username: str = "authenticated user") -> str:
     """
     Generate a summary of a GitHub user's profile and repositories.
-    
+
     Args:
         username: GitHub username to summarize (defaults to authenticated user)
-        
+
     Returns:
         A prompt template for analyzing GitHub user data
     """
@@ -67,7 +66,7 @@ Based on the retrieved data, provide:
 4. Notable achievements or statistics
 
 Format your response in a clear, readable markdown format."""
-    
+
     return prompt_text
 
 
@@ -78,17 +77,17 @@ async def get_github_user_info(
 ) -> str:
     """
     Fetch authenticated GitHub user information and repositories using OAuth.
-    
-    This tool requires OAuth authentication and retrieves the user's profile 
+
+    This tool requires OAuth authentication and retrieves the user's profile
     and recent repositories. Returns structured data about the user and their repositories.
-    
+
     Args:
         include_repos: Whether to include repository information (default: True)
         repo_limit: Maximum number of repositories to fetch (1-100, default: 10)
-        
+
     Returns:
         JSON string containing user profile and repository information
-        
+
     Raises:
         ValueError: If OAuth is not configured or user is not authenticated
     """
@@ -167,7 +166,7 @@ For manual testing, you can use the authorization_url directly or visit /oauth/a
     except Exception as e:
         error_msg = f"Error fetching GitHub user info: {str(e)}"
         logger.error(error_msg, exc_info=True)
-        raise ValueError(error_msg)
+        raise ValueError(error_msg) from e
 
 
 @mcp.tool()
@@ -178,20 +177,20 @@ async def analyze_code_with_llm(
 ) -> str:
     """
     Use LLM sampling to analyze code snippets or GitHub repository data.
-    
+
     This tool demonstrates the MCP sampling capability by requesting the client's
     language model to analyze code or provide insights. Requires the client to support
     the 'sampling' capability.
-    
+
     Args:
         code: Code snippet or data to analyze
-        analysis_type: Type of analysis to perform (explain, review, suggest_improvements, 
+        analysis_type: Type of analysis to perform (explain, review, suggest_improvements,
                       find_bugs, security_review)
         max_tokens: Maximum tokens for the LLM response (100-2000, default: 500)
-        
+
     Returns:
         Analysis result with model information
-        
+
     Raises:
         ValueError: If code is empty or client doesn't support sampling
     """
@@ -250,7 +249,7 @@ For now, you can:
 async def oauth_metadata(request: Request) -> JSONResponse:
     """
     RFC 8414 Authorization Server Metadata endpoint.
-    
+
     Provides machine-readable OAuth server metadata for client autodiscovery.
     """
     logger.info("Serving OAuth authorization server metadata")
@@ -262,25 +261,25 @@ async def oauth_metadata(request: Request) -> JSONResponse:
 async def oauth_authorize(request: Request) -> RedirectResponse:
     """
     OAuth authorization endpoint.
-    
+
     Initiates the OAuth authorization flow by redirecting to the GitHub OAuth page.
     """
     logger.info("Initiating OAuth authorization flow")
     cleanup_expired_sessions()
-    
+
     # Generate authorization URL with PKCE
     auth_url, state, code_verifier = oauth_handler.get_authorization_url()
-    
+
     # Store session data for callback
     oauth_sessions[state] = {
         "code_verifier": code_verifier,
         "created_at": datetime.now(),
         "expires_at": datetime.now() + timedelta(minutes=10),  # 10 minute expiry
     }
-    
+
     logger.info(f"OAuth session created. State: {state}")
     logger.info(f"Active OAuth sessions: {len(oauth_sessions)}")
-    
+
     # Redirect to GitHub OAuth page
     return RedirectResponse(url=auth_url)
 
@@ -289,17 +288,17 @@ async def oauth_authorize(request: Request) -> RedirectResponse:
 async def oauth_callback(request: Request) -> HTMLResponse:
     """
     OAuth callback endpoint.
-    
+
     Handles the OAuth callback from GitHub and exchanges the authorization code for tokens.
     """
     logger.info("Received OAuth callback")
     cleanup_expired_sessions()
-    
+
     # Get authorization code and state from query parameters
     code = request.query_params.get("code")
     state = request.query_params.get("state")
     error = request.query_params.get("error")
-    
+
     if error:
         logger.error(f"OAuth error: {error}")
         error_html = f"""
@@ -322,7 +321,7 @@ async def oauth_callback(request: Request) -> HTMLResponse:
         </html>
         """
         return HTMLResponse(content=error_html, status_code=400)
-    
+
     if not code or not state:
         logger.error("Missing authorization code or state")
         error_html = """
@@ -345,10 +344,10 @@ async def oauth_callback(request: Request) -> HTMLResponse:
         </html>
         """
         return HTMLResponse(content=error_html, status_code=400)
-    
+
     # Retrieve session data
     session_data = oauth_sessions.pop(state, None)
-    
+
     if not session_data:
         logger.error(f"Invalid or expired state: {state}")
         error_html = """
@@ -371,9 +370,9 @@ async def oauth_callback(request: Request) -> HTMLResponse:
         </html>
         """
         return HTMLResponse(content=error_html, status_code=400)
-    
+
     code_verifier = session_data["code_verifier"]
-    
+
     try:
         # Exchange code for token
         token = await oauth_handler.exchange_code_for_token(
@@ -381,9 +380,9 @@ async def oauth_callback(request: Request) -> HTMLResponse:
             code_verifier=code_verifier,
             redirect_uri=settings.oauth_redirect_uri
         )
-        
+
         logger.info("Successfully exchanged authorization code for access token")
-        
+
         # Success page
         success_html = f"""
         <!DOCTYPE html>
@@ -416,7 +415,7 @@ async def oauth_callback(request: Request) -> HTMLResponse:
         </html>
         """
         return HTMLResponse(content=success_html, status_code=200)
-        
+
     except Exception as e:
         logger.error(f"Token exchange failed: {e}", exc_info=True)
         error_html = f"""
@@ -457,9 +456,9 @@ def get_app() -> FastMCP:
 def create_mcp_server() -> tuple[FastMCP, OAuthHandler, APIClient]:
     """
     Create and configure the MCP server with OAuth support.
-    
+
     This function maintains compatibility with the old API while using FastMCP.
-    
+
     Returns:
         Tuple of (mcp_server, oauth_handler, api_client)
     """

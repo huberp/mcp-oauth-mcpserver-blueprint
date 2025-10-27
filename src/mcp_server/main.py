@@ -44,7 +44,7 @@ async def run_server() -> None:
     logger.info(f"MCP endpoint: http://{settings.server_host}:{settings.server_port}{settings.server_path}")
     logger.info(f"OAuth metadata: http://{settings.server_host}:{settings.server_port}/.well-known/oauth-authorization-server")
     logger.info(f"Health check: http://{settings.server_host}:{settings.server_port}/health")
-    
+
     await mcp.run_async(
         transport="http",
         host=settings.server_host,
