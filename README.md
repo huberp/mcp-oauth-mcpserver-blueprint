@@ -2,9 +2,9 @@
 
 A production-ready Model Context Protocol (MCP) server with OAuth 2.1 authentication support, built with Python and FastMCP.
 
-[![CI](https://github.com/huberp/n-eight-n/workflows/CI/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/ci.yml)
-[![Tests](https://github.com/huberp/n-eight-n/workflows/Tests/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/test.yml)
-[![MCP Tester](https://github.com/huberp/n-eight-n/workflows/MCP%20Tester/badge.svg)](https://github.com/huberp/n-eight-n/actions/workflows/mcp-tester.yml)
+[![CI](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/workflows/CI/badge.svg)](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/actions/workflows/ci.yml)
+[![Tests](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/workflows/Tests/badge.svg)](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/actions/workflows/test.yml)
+[![MCP Tester](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/workflows/MCP%20Tester/badge.svg)](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/actions/workflows/mcp-tester.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -12,8 +12,11 @@ A production-ready Model Context Protocol (MCP) server with OAuth 2.1 authentica
 
 This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Key for Code Exchange) for accessing third-party APIs. It's designed to run locally in MCP hosts like Visual Studio Code and can be deployed as a Docker container.
 
+**Transport**: This server uses HTTP transport (Streamable HTTP with SSE) per MCP Specification 2025-06-18. For migration details from stdio, see [HTTP Transport Guide](docs/HTTP_TRANSPORT_GUIDE.md).
+
 ### Key Features
 
+- **HTTP Transport**: Streamable HTTP with Server-Sent Events (SSE) per MCP Spec 2025-06-18
 - **OAuth 2.1 Authentication**: Full implementation with PKCE support for secure authentication
 - **RFC 8414 Authorization Metadata**: Server exposes OAuth metadata for client autodiscovery
 - **RFC 8707 Resource Indicators**: Implements resource indicators for enhanced token security
@@ -72,8 +75,8 @@ This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Ke
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/huberp/n-eight-n.git
-cd n-eight-n
+git clone https://github.com/huberp/mcp-oauth-mcpserver-blueprint.git
+cd mcp-oauth-mcpserver-blueprint
 ```
 
 ### 2. Setup Environment
@@ -112,8 +115,8 @@ OAUTH_SCOPES=read:user,repo
 2. Click "New OAuth App"
 3. Fill in the details:
    - Application name: MCP OAuth Server (or your preferred name)
-   - Homepage URL: http://localhost:8080
-   - Authorization callback URL: http://localhost:8080/callback
+   - Homepage URL: http://localhost:8000
+   - Authorization callback URL: http://localhost:8000/oauth/callback
 4. Copy the Client ID and generate a Client Secret
 
 💡 **Need help?** Check the [comprehensive setup guide](docs/setup-auth-github.md) for step-by-step instructions, troubleshooting, and testing.
@@ -193,17 +196,25 @@ The server will be available at:
 .\scripts\build-docker.ps1
 ```
 
-### Run with Docker Compose
+### Run with Docker Compose (Recommended)
+
+For development with automatic environment loading and easy management:
 
 ```bash
 docker-compose up
 ```
 
-### Run with Docker
+The server will be available at `http://localhost:8000/mcp`.
+
+### Run with Docker (Production)
+
+For production deployments or manual control:
 
 ```bash
-docker run --env-file .env -i mcp-oauth-server:latest
+docker run --env-file .env -p 8000:8000 mcp-oauth-server:latest
 ```
+
+**Note**: Port mapping (`-p 8000:8000`) is required to access the HTTP server from your host machine.
 
 ## Usage
 
@@ -273,34 +284,29 @@ def fibonacci(n):
 
 ### MCP Host Configuration (VS Code)
 
-Add this to your MCP settings in VS Code:
+**Note**: This server uses HTTP transport (Streamable HTTP with SSE) per MCP Specification 2025-06-18. For migration details, see [HTTP Transport Guide](docs/HTTP_TRANSPORT_GUIDE.md).
+
+Add this to your MCP settings in VS Code (`.vscode/mcp.json` or your MCP configuration file):
 
 ```json
 {
   "mcpServers": {
     "mcp-oauth-server": {
-      "command": "docker",
-      "args": ["run", "--env-file", "/path/to/.env", "-i", "mcp-oauth-server:latest"]
+      "type": "http",
+      "url": "http://localhost:8000/mcp"
     }
   }
 }
 ```
 
-Or for local development without Docker:
+**Important**: The server must be running before the MCP client connects. Start the server with:
 
-```json
-{
-  "mcpServers": {
-    "mcp-oauth-server": {
-      "command": "python",
-      "args": ["-m", "mcp_server.main"],
-      "env": {
-        "OAUTH_CLIENT_ID": "your_client_id",
-        "OAUTH_CLIENT_SECRET": "your_client_secret"
-      }
-    }
-  }
-}
+```bash
+# Using scripts (recommended)
+./scripts/run.sh
+
+# Or with Docker
+docker-compose up
 ```
 
 ## MCP Server Testing
@@ -390,7 +396,20 @@ Both configurations connect to `http://localhost:8000/mcp` by default.
 │   ├── run.sh/ps1           # Run server
 │   └── build-docker.sh/ps1  # Build Docker image
 ├── docs/                    # Documentation
-│   └── RESEARCH.md          # Research and implementation notes
+│   ├── RESEARCH.md          # Research and implementation notes
+│   ├── setup-auth-github.md # GitHub OAuth setup guide
+│   ├── AUTHORIZATION_GUIDE.md # Complete authorization guide
+│   ├── AUTHORIZATION_QUICK_REFERENCE.md # Quick reference
+│   ├── AUTHORIZATION_FLOW_SUMMARY.md # Authorization flow summary
+│   ├── HTTP_TRANSPORT_GUIDE.md # HTTP transport migration guide
+│   ├── MCP_AUTHORIZATION_ANALYSIS.md # Technical analysis
+│   ├── IMPLEMENTATION_SUMMARY.md # Implementation summary
+│   ├── SPEC_UPDATE_2025-06-18.md # MCP spec update notes
+│   └── sampling.md          # Sampling feature documentation
+├── runlocal/                # Local development tools
+│   ├── config.json          # MCP Inspector configuration
+│   ├── run-inspector.sh     # Inspector runner (Linux/macOS)
+│   └── run-inspector.ps1    # Inspector runner (Windows)
 ├── .github/
 │   ├── workflows/           # GitHub Actions CI/CD
 │   │   ├── ci.yml          # Main CI pipeline
@@ -445,17 +464,25 @@ black src/ tests/
 |----------|-------------|---------|----------|
 | `OAUTH_CLIENT_ID` | OAuth client ID | - | Yes |
 | `OAUTH_CLIENT_SECRET` | OAuth client secret | - | Yes |
-| `OAUTH_AUTHORIZATION_URL` | OAuth authorization endpoint | GitHub URL | No |
-| `OAUTH_TOKEN_URL` | OAuth token endpoint | GitHub URL | No |
+| `OAUTH_AUTHORIZATION_URL` | OAuth authorization endpoint | https://github.com/login/oauth/authorize | No |
+| `OAUTH_TOKEN_URL` | OAuth token endpoint | https://github.com/login/oauth/access_token | No |
 | `OAUTH_SCOPES` | Comma-separated OAuth scopes | read:user | No |
+| `OAUTH_REDIRECT_URI` | OAuth callback URL | http://localhost:8000/oauth/callback | No |
 | `OAUTH_ISSUER` | OAuth issuer URL (RFC 8414) | https://github.com | No |
 | `OAUTH_GRANT_TYPES_SUPPORTED` | Supported grant types | authorization_code,refresh_token | No |
 | `OAUTH_CODE_CHALLENGE_METHODS_SUPPORTED` | PKCE methods supported | S256 | No |
+| `OAUTH_RESPONSE_TYPES_SUPPORTED` | OAuth response types | code | No |
+| `OAUTH_TOKEN_ENDPOINT_AUTH_METHODS` | Token endpoint auth methods | client_secret_post,client_secret_basic | No |
 | `API_BASE_URL` | API base URL | https://api.github.com | No |
 | `API_TIMEOUT` | API request timeout (seconds) | 30 | No |
 | `SERVER_NAME` | MCP server name | mcp-oauth-server | No |
+| `SERVER_VERSION` | Server version | 0.1.0 | No |
+| `SERVER_HOST` | HTTP server host | 0.0.0.0 | No |
+| `SERVER_PORT` | HTTP server port | 8000 | No |
+| `SERVER_PATH` | MCP endpoint path | /mcp | No |
 | `LOG_LEVEL` | Logging level | INFO | No |
 | `ENVIRONMENT` | Environment name | development | No |
+| `DEBUG` | Enable debug mode | false | No |
 
 ## Authorization
 
@@ -611,7 +638,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For issues, questions, or contributions, please:
-- Open an issue on [GitHub](https://github.com/huberp/n-eight-n/issues)
+- Open an issue on [GitHub](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/issues)
 - Check the [GitHub OAuth Setup Guide](docs/setup-auth-github.md) for authentication setup
 - Check the [documentation](docs/RESEARCH.md) for detailed implementation notes
 
