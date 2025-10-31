@@ -18,8 +18,8 @@ if (-not (Test-Path $PidFile)) {
 
 # Read PID from file
 try {
-    $Pid = Get-Content $PidFile -ErrorAction Stop
-    Write-Host "Found PID: $Pid" -ForegroundColor Cyan
+    $ProcessPid = Get-Content $PidFile -ErrorAction Stop
+    Write-Host "Found PID: $ProcessPid" -ForegroundColor Cyan
 } catch {
     Write-Host "Error reading PID file: $_" -ForegroundColor Red
     exit 1
@@ -27,32 +27,31 @@ try {
 
 # Try to stop the process
 try {
-    $Process = Get-Process -Id $Pid -ErrorAction SilentlyContinue
-    
+    $Process = Get-Process -Id $ProcessPid -ErrorAction SilentlyContinue
+
     if ($Process) {
-        Write-Host "Stopping process $Pid..." -ForegroundColor Yellow
-        
-        # Try graceful shutdown first
-        $Process.CloseMainWindow() | Out-Null
-        Start-Sleep -Seconds 2
-        
-        # Check if still running
-        $Process.Refresh()
-        if (-not $Process.HasExited) {
-            Write-Host "Graceful shutdown failed, forcing termination..." -ForegroundColor Yellow
-            Stop-Process -Id $Pid -Force
-            Start-Sleep -Seconds 1
+    Write-Host "Stopping server (PID $PID_TO_STOP)..." -ForegroundColor Cyan
+    Stop-Process -Id $PID_TO_STOP -Force
+
+    # Wait for process to stop
+    for ($local:i = 1; $i -le 10; $i++) {
+        $local:process = Get-Process -Id $PID_TO_STOP -ErrorAction SilentlyContinue
+        if (-not $process) {
+            break
         }
-        
-        Write-Host "Server stopped successfully!" -ForegroundColor Green
-    } else {
-        Write-Host "Process $Pid is not running (may have already stopped)." -ForegroundColor Yellow
+        Start-Sleep -Seconds 1
     }
-    
+
+    Remove-Item -Path $PID_FILE -ErrorAction SilentlyContinue
+    Write-Host "Server stopped" -ForegroundColor Green
+    } else {
+        Write-Host "Process $ProcessPid is not running (may have already stopped)." -ForegroundColor Yellow
+    }
+
     # Remove PID file
     Remove-Item $PidFile -Force
     Write-Host "PID file removed." -ForegroundColor Gray
-    
+
 } catch {
     Write-Host "Error stopping process: $_" -ForegroundColor Red
     Write-Host "You may need to manually kill process $Pid" -ForegroundColor Yellow
