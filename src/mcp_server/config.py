@@ -85,9 +85,7 @@ class Settings(BaseSettings):
                 if s.strip()
             ],
             "token_endpoint_auth_methods_supported": [
-                s.strip()
-                for s in self.oauth_token_endpoint_auth_methods.split(",")
-                if s.strip()
+                s.strip() for s in self.oauth_token_endpoint_auth_methods.split(",") if s.strip()
             ],
         }
 

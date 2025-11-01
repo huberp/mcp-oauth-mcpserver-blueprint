@@ -2,6 +2,8 @@
 
 import json
 import logging
+from collections.abc import Callable
+from functools import wraps
 from typing import Any
 
 from fastmcp import FastMCP
@@ -10,6 +12,12 @@ from fastmcp.server.dependencies import get_access_token
 
 from mcp_server.api_client import APIClient
 from mcp_server.config import settings
+from mcp_server.http_endpoints import (
+    health_endpoint,
+    increment_tool_call,
+    info_endpoint,
+    metrics_endpoint,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +34,50 @@ auth_provider = GitHubProvider(
 mcp = FastMCP(name=settings.server_name, auth=auth_provider)
 
 
+# Register custom HTTP endpoints
+@mcp.custom_route("/health", methods=["GET"])
+async def health_route(request: Any) -> Any:
+    """Health check endpoint."""
+    return await health_endpoint(request)
+
+
+@mcp.custom_route("/metrics", methods=["GET"])
+async def metrics_route(request: Any) -> Any:
+    """Metrics endpoint with tool call statistics."""
+    return await metrics_endpoint(request)
+
+
+@mcp.custom_route("/info", methods=["GET"])
+async def info_route(request: Any) -> Any:
+    """Server information endpoint."""
+    return await info_endpoint(request)
+
+
+# Decorator to track tool calls
+def track_tool_call(tool_name: str) -> Callable:
+    """
+    Decorator to track tool calls for metrics.
+
+    Args:
+        tool_name: Name of the tool being called
+
+    Returns:
+        Decorator function
+    """
+
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            increment_tool_call(tool_name)
+            return await func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 @mcp.tool
+@track_tool_call("get_user_info")
 async def get_user_info() -> dict:
     """Return authenticated GitHub user information."""
     token = get_access_token()
@@ -39,6 +90,7 @@ async def get_user_info() -> dict:
 
 
 @mcp.tool()
+@track_tool_call("get_github_user_info")
 async def get_github_user_info(include_repos: bool = True, repo_limit: int = 10) -> str:
     """
     Fetch authenticated user info and repos from GitHub.

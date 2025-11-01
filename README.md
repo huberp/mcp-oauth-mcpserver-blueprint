@@ -181,6 +181,8 @@ The server will be available at:
 - MCP endpoint: `http://localhost:8000/mcp`
 - OAuth authorization: `http://localhost:8000/oauth/authorize`
 - Health check: `http://localhost:8000/health`
+- Metrics: `http://localhost:8000/metrics`
+- Server info: `http://localhost:8000/info`
 
 ## Docker Deployment
 
@@ -281,6 +283,102 @@ def fibonacci(n):
 ```
 
 **Note:** This tool will return an error if the client does not support sampling. Supported clients include Claude Desktop and VS Code with MCP support.
+
+### HTTP Endpoints
+
+The server provides additional HTTP endpoints for monitoring and information:
+
+#### `/health` - Health Check
+
+Health check endpoint for monitoring server status.
+
+**Method:** GET
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "server": "mcp-oauth-server",
+  "version": "0.1.0",
+  "uptime_seconds": 123.45,
+  "timestamp": "2025-11-01T10:51:40.812895Z"
+}
+```
+
+**Use cases:**
+- Kubernetes/Docker health checks
+- Monitoring tools
+- Load balancer health checks
+
+#### `/metrics` - Server Metrics
+
+Metrics endpoint providing tool call statistics and operational data.
+
+**Method:** GET
+
+**Response:**
+```json
+{
+  "server": "mcp-oauth-server",
+  "version": "0.1.0",
+  "uptime_seconds": 123.45,
+  "tool_calls": {
+    "total": 42,
+    "by_tool": {
+      "get_user_info": 15,
+      "get_github_user_info": 27
+    }
+  },
+  "timestamp": "2025-11-01T10:51:40.817726Z"
+}
+```
+
+**Use cases:**
+- Performance monitoring
+- Usage analytics
+- Debugging tool usage patterns
+
+#### `/info` - Server Information
+
+Information endpoint providing comprehensive server metadata.
+
+**Method:** GET
+
+**Response:**
+```json
+{
+  "server": {
+    "name": "mcp-oauth-server",
+    "version": "0.1.0",
+    "environment": "production",
+    "debug": false
+  },
+  "github": {
+    "repository": "huberp/mcp-oauth-mcpserver-blueprint",
+    "url": "https://github.com/huberp/mcp-oauth-mcpserver-blueprint"
+  },
+  "oauth": {
+    "configured": true,
+    "provider": "GitHub",
+    "scopes": ["read:user", "repo"]
+  },
+  "http": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "path": "/mcp"
+  },
+  "api": {
+    "base_url": "https://api.github.com",
+    "timeout": 30
+  },
+  "timestamp": "2025-11-01T10:51:40.815391Z"
+}
+```
+
+**Use cases:**
+- Service discovery
+- Configuration verification
+- Diagnostics and troubleshooting
 
 ### MCP Host Configuration (VS Code)
 
