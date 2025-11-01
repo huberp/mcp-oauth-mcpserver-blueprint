@@ -4,11 +4,14 @@ import asyncio
 import logging
 import sys
 
-from .config import settings
-from .server import mcp
+from mcp_server.config import settings
+from mcp_server.server import mcp
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
-
 
 async def run_server() -> None:
     """Run the MCP server with HTTP transport."""
@@ -52,11 +55,23 @@ async def run_server() -> None:
         path=settings.server_path,
     )
 
+async def run_server2() -> None:
+    """Run the MCP server with HTTP transport."""
+    logger.info(f"Starting {settings.server_name} v{settings.server_version}")
+    logger.info(f"Environment: {settings.environment}")
+    logger.info(f"HTTP Server: {settings.server_host}:{settings.server_port}{settings.server_path}")
+
+    await mcp.run_async(
+        transport="http",
+        host=settings.server_host,
+        port=settings.server_port,
+        path=settings.server_path,
+    )
 
 def main() -> None:
     """Main entry point."""
     try:
-        asyncio.run(run_server())
+        asyncio.run(run_server2())
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
         sys.exit(0)

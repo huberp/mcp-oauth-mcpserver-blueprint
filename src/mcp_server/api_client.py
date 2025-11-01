@@ -4,67 +4,64 @@ from typing import Any
 
 import httpx
 
-from .config import settings
-from .oauth_handler import OAuthHandler
+from mcp_server.config import settings
+from fastmcp.server.dependencies import get_access_token
+from fastmcp.server.auth import AccessToken
 
 
 class APIClient:
     """Client for making authenticated API requests."""
 
-    def __init__(self, oauth_handler: OAuthHandler) -> None:
+    def __init__(self) -> None:
         """
         Initialize API client with OAuth handler.
-
-        Args:
-            oauth_handler: OAuth handler for authentication
         """
-        self.oauth_handler = oauth_handler
         self.base_url = settings.api_base_url
         self.timeout = settings.api_timeout
 
-    async def get_user_info(self) -> dict[str, Any]:
+    async def get_user_info(self, token: AccessToken) -> dict[str, Any]:
         """
         Fetch authenticated user information from GitHub API.
+
+        Args:
+            token: Access token for authentication
 
         Returns:
             User information dictionary
 
         Raises:
-            ValueError: If not authenticated
             httpx.HTTPError: If API request fails
         """
-        if not self.oauth_handler.is_authenticated():
-            raise ValueError("Not authenticated. Please authenticate first.")
-
-        headers = self.oauth_handler.get_auth_headers()
-        headers["Accept"] = "application/vnd.github+json"
-        headers["X-GitHub-Api-Version"] = "2022-11-28"
+        headers = {
+            "Authorization": f"Bearer {token.token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(f"{self.base_url}/user", headers=headers)
             response.raise_for_status()
             return response.json()
 
-    async def get_user_repos(self, limit: int = 10) -> list[dict[str, Any]]:
+    async def get_user_repos(self, token: AccessToken, limit: int = 10) -> list[dict[str, Any]]:
         """
         Fetch authenticated user's repositories from GitHub API.
 
         Args:
+            token: Access token for authentication
             limit: Maximum number of repositories to return
 
         Returns:
             List of repository dictionaries
 
         Raises:
-            ValueError: If not authenticated
             httpx.HTTPError: If API request fails
         """
-        if not self.oauth_handler.is_authenticated():
-            raise ValueError("Not authenticated. Please authenticate first.")
-
-        headers = self.oauth_handler.get_auth_headers()
-        headers["Accept"] = "application/vnd.github+json"
-        headers["X-GitHub-Api-Version"] = "2022-11-28"
+        headers = {
+            "Authorization": f"Bearer {token.token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(
