@@ -1,69 +1,65 @@
+"""MCP server implementation with FastMCP OAuth handling."""
+
 import json
 import logging
 from typing import Any
 
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.github import GitHubProvider
+from fastmcp.server.dependencies import get_access_token
 
 from mcp_server.api_client import APIClient
 from mcp_server.config import settings
 
-# Initialize logger
 logger = logging.getLogger(__name__)
 
 api_client = APIClient()
 
-# The GitHubProvider handles GitHub's token format and validation
+# GitHubProvider handles GitHub token format and validation
 auth_provider = GitHubProvider(
-    client_id=settings.oauth_client_id,  # Your GitHub OAuth App Client ID
-    client_secret=settings.oauth_client_secret,     # Your GitHub OAuth App Client Secret
-    base_url="http://localhost:8000",   # Must match your OAuth App configuration
-    # redirect_path="/auth/callback"   # Default value, customize if needed
+    client_id=settings.oauth_client_id,
+    client_secret=settings.oauth_client_secret,
+    base_url="http://localhost:8000",  # Must match OAuth App configuration
+    # redirect_path="/auth/callback"   # Default, customize if needed
 )
 
 mcp = FastMCP(name=settings.server_name, auth=auth_provider)
 
-# Add a protected tool to test authentication
+
 @mcp.tool
 async def get_user_info() -> dict:
-    """Returns information about the authenticated GitHub user."""
-    from fastmcp.server.dependencies import get_access_token
-
+    """Return authenticated GitHub user information."""
     token = get_access_token()
-    # The GitHubProvider stores user data in token claims
+    # GitHubProvider stores user data in token claims
     return {
         "github_user": token.claims.get("login"),
         "name": token.claims.get("name"),
-        "email": token.claims.get("email")
+        "email": token.claims.get("email"),
     }
 
-@mcp.tool()
-async def get_github_user_info(
-    include_repos: bool = True,
-    repo_limit: int = 10
-) -> str:
-    """
-    Fetch authenticated GitHub user information and repositories using OAuth.
 
-    This tool requires OAuth authentication and retrieves the user's profile
-    and recent repositories. Returns structured data about the user and their repositories.
+@mcp.tool()
+async def get_github_user_info(include_repos: bool = True, repo_limit: int = 10) -> str:
+    """
+    Fetch authenticated user info and repos from GitHub.
+
+    Requires OAuth authentication. Returns user profile and repository data.
 
     Args:
-        include_repos: Whether to include repository information (default: True)
-        repo_limit: Maximum number of repositories to fetch (1-100, default: 10)
+        include_repos: Include repository information (default: True)
+        repo_limit: Max repositories to fetch, 1-100 (default: 10)
 
     Returns:
-        JSON string containing user profile and repository information
+        JSON string with user profile and repository data
 
     Raises:
-        ValueError: If OAuth is not configured or user is not authenticated
+        ValueError: If not authenticated or API call fails
     """
-    from fastmcp.server.dependencies import get_access_token
     token = get_access_token()
 
-    # Check if authenticated
+    # Verify authentication
     if not token:
-        error_msg = "OAuth authentication required. Please authenticate with GitHub first."
+        error_msg = "OAuth authentication required. Authenticate with GitHub first."
         logger.warning("User not authenticated")
         raise ValueError(error_msg)
 

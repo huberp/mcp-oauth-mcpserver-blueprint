@@ -1,6 +1,5 @@
 """Tests for configuration module."""
 
-
 from mcp_server.config import Settings
 
 
