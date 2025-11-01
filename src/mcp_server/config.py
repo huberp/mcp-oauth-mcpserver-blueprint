@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
+    """Application settings from environment variables."""
 
     model_config = SettingsConfigDict(
         env_file=os.getenv("SETTINGS_FILE", ".env"),
@@ -60,13 +60,13 @@ class Settings(BaseSettings):
 
     def get_authorization_metadata(self) -> dict[str, Any]:
         """
-        Get RFC 8414 compliant authorization server metadata.
+        Get RFC 8414 OAuth authorization server metadata.
 
-        This metadata helps MCP clients discover OAuth endpoints and capabilities
+        Enables MCP clients to discover OAuth endpoints and capabilities
         for automated authentication flows.
 
         Returns:
-            Dictionary containing OAuth authorization server metadata
+            OAuth authorization server metadata
         """
         return {
             "issuer": self.oauth_issuer,
