@@ -5,7 +5,6 @@ import logging
 from typing import Any
 
 from fastmcp import FastMCP
-from fastmcp.server.auth import AccessToken
 from fastmcp.server.auth.providers.github import GitHubProvider
 
 from mcp_server.api_client import APIClient

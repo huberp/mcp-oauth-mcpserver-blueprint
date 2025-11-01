@@ -50,7 +50,7 @@ This MCP server demonstrates secure OAuth 2.1 authentication with PKCE (Proof Ke
 │                                 │                            │
 │  ┌──────────────────────────────▼──────────────────────┐   │
 │  │  MCP Server (FastMCP)                                │   │
-│  │  - OAuth 2.1 Handler (PKCE)                          │   │
+│  │  - GitHubProvider (OAuth 2.1 with PKCE)              │   │
 │  │  - GitHub API Client                                 │   │
 │  │  - Prompt: github_user_summary                       │   │
 │  │  - Tool: get_github_user_info (OAuth)                │   │
@@ -380,7 +380,6 @@ Both configurations connect to `http://localhost:8000/mcp` by default.
 ├── src/mcp_server/          # Main application code
 │   ├── __init__.py          # Package initialization
 │   ├── config.py            # Configuration management
-│   ├── oauth_handler.py     # OAuth 2.1 implementation with PKCE
 │   ├── api_client.py        # GitHub API client
 │   ├── server.py            # MCP server implementation
 │   └── main.py              # Application entry point
@@ -388,8 +387,8 @@ Both configurations connect to `http://localhost:8000/mcp` by default.
 │   ├── __init__.py
 │   ├── conftest.py          # Test fixtures
 │   ├── test_config.py       # Configuration tests
-│   ├── test_oauth_handler.py # OAuth handler tests
-│   └── test_api_client.py   # API client tests
+│   ├── test_api_client.py   # API client tests
+│   └── test_sampling.py     # Sampling capability tests
 ├── scripts/                 # Utility scripts
 │   ├── setup.sh/ps1         # Environment setup
 │   ├── test.sh/ps1          # Run tests
@@ -436,7 +435,7 @@ pytest
 pytest --cov=src/mcp_server
 
 # Run specific test file
-pytest tests/test_oauth_handler.py
+pytest tests/test_config.py
 
 # Run with verbose output
 pytest -v
@@ -629,7 +628,7 @@ If you encounter OAuth authentication errors:
 pytest -v
 
 # Run a specific test
-pytest tests/test_oauth_handler.py::test_generate_pkce_pair -v
+pytest tests/test_config.py::test_oauth_scopes_list -v
 
 # Skip slow tests
 pytest -m "not slow"
