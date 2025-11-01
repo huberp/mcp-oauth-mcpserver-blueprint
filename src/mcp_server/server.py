@@ -6,6 +6,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.github import GitHubProvider
+from fastmcp.server.dependencies import get_access_token
 
 from mcp_server.api_client import APIClient
 from mcp_server.config import settings
@@ -28,8 +29,6 @@ mcp = FastMCP(name=settings.server_name, auth=auth_provider)
 @mcp.tool
 async def get_user_info() -> dict:
     """Return authenticated GitHub user information."""
-    from fastmcp.server.dependencies import get_access_token
-
     token = get_access_token()
     # GitHubProvider stores user data in token claims
     return {
@@ -56,8 +55,6 @@ async def get_github_user_info(include_repos: bool = True, repo_limit: int = 10)
     Raises:
         ValueError: If not authenticated or API call fails
     """
-    from fastmcp.server.dependencies import get_access_token
-
     token = get_access_token()
 
     # Verify authentication
