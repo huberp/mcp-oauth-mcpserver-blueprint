@@ -40,9 +40,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
 
-    async def get_user_repos(
-        self, token: AccessToken, limit: int = 10
-    ) -> list[dict[str, Any]]:
+    async def get_user_repos(self, token: AccessToken, limit: int = 10) -> list[dict[str, Any]]:
         """
         Fetch authenticated user's repos from GitHub API.
 
