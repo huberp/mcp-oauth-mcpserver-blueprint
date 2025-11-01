@@ -7,6 +7,11 @@ A production-ready Model Context Protocol (MCP) server with OAuth 2.1 authentica
 [![MCP Tester](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/workflows/MCP%20Tester/badge.svg)](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/actions/workflows/mcp-tester.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Codecov](https://codecov.io/gh/huberp/mcp-oauth-mcpserver-blueprint/branch/main/graph/badge.svg)](https://codecov.io/gh/huberp/mcp-oauth-mcpserver-blueprint)
+[![Code Climate](https://codeclimate.com/github/huberp/mcp-oauth-mcpserver-blueprint/badges/gpa.svg)](https://codeclimate.com/github/huberp/mcp-oauth-mcpserver-blueprint)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/PROJECT_UUID)](https://www.codacy.com/gh/huberp/mcp-oauth-mcpserver-blueprint)
+[![PyUp Safety](https://pyup.io/repos/github/huberp/mcp-oauth-mcpserver-blueprint/badge.svg)](https://pyup.io/repos/github/huberp/mcp-oauth-mcpserver-blueprint/)
+[![Requires.io](https://requires.io/github/huberp/mcp-oauth-mcpserver-blueprint/requirements.svg?branch=main)](https://requires.io/github/huberp/mcp-oauth-mcpserver-blueprint/requirements/?branch=main)
 
 ## Overview
 
