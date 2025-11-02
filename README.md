@@ -8,7 +8,7 @@ A production-ready Model Context Protocol (MCP) server with OAuth 2.1 authentica
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Codecov](https://codecov.io/gh/huberp/mcp-oauth-mcpserver-blueprint/branch/main/graph/badge.svg)](https://codecov.io/gh/huberp/mcp-oauth-mcpserver-blueprint)
-[![Release](https://img.shields.io/github/v/release/huberp/mcp-oauth-server-blueprint)](https://github.com/huberp/mcp-oauth-server-blueprint/releases)
+[![Release](https://img.shields.io/github/v/release/huberp/mcp-oauth-mcpserver-blueprint)](https://github.com/huberp/mcp-oauth-mcpserver-blueprint/releases)
 
 ## Overview
 
