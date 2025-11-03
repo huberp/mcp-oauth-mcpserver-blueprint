@@ -51,8 +51,8 @@ if (Test-Path ".env") {
 
 # Build python command
 $PythonCmd = "python"
-if (Test-Path "venv\Scripts\python.exe") {
-    $PythonCmd = "venv\Scripts\python.exe"
+if (Test-Path ".venv\Scripts\python.exe") {
+    $PythonCmd = ".venv\Scripts\python.exe"
 }
 
 if ($Foreground) {
@@ -60,17 +60,17 @@ if ($Foreground) {
     Write-Host "Starting server in foreground mode..." -ForegroundColor Yellow
     Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Gray
     Write-Host ""
-    
+
     # Apply environment variables
     foreach ($key in $EnvVars.Keys) {
         [System.Environment]::SetEnvironmentVariable($key, $EnvVars[$key], "Process")
     }
-    
+
     & $PythonCmd -m mcp_server.main
 } else {
     # Run in background mode
     Write-Host "Starting server in background mode..." -ForegroundColor Yellow
-    
+
     # Create a temporary script to run the server with environment variables
     $TempScript = [System.IO.Path]::GetTempFileName() + ".ps1"
     $ScriptContent = @"
@@ -81,28 +81,28 @@ if ($Foreground) {
         $ScriptContent += "`n`$env:$key = '$value'"
     }
     $ScriptContent += "`n& '$PythonCmd' -m mcp_server.main"
-    
+
     Set-Content -Path $TempScript -Value $ScriptContent
-    
+
     # Start process in background
     $Process = Start-Process -FilePath "powershell.exe" `
         -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$TempScript`"" `
         -WindowStyle Hidden `
         -PassThru
-    
+
     # Wait a moment to ensure process started
     Start-Sleep -Seconds 2
-    
+
     # Check if process is still running
     if ($Process.HasExited) {
         Write-Host "Error: Server failed to start" -ForegroundColor Red
         Remove-Item $TempScript -Force -ErrorAction SilentlyContinue
         exit 1
     }
-    
+
     # Save PID to file
     $Process.Id | Out-File -FilePath $PidFile -Encoding ASCII
-    
+
     Write-Host "Server started successfully!" -ForegroundColor Green
     Write-Host "PID: $($Process.Id)" -ForegroundColor Cyan
     Write-Host "PID file: $PidFile" -ForegroundColor Gray
@@ -113,7 +113,7 @@ if ($Foreground) {
     Write-Host "  Health: http://localhost:8000/health" -ForegroundColor White
     Write-Host ""
     Write-Host "To stop the server, run: .\scripts\stop.ps1" -ForegroundColor Yellow
-    
+
     # Clean up temp script after a delay (in background)
     Start-Job -ScriptBlock {
         param($path)
